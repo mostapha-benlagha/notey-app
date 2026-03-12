@@ -8,10 +8,12 @@ export function ChatContainer({
   notes,
   projects,
   onDeleteNote,
+  onOpenNote,
 }: {
   notes: Note[];
   projects: Project[];
   onDeleteNote: (noteId: string) => void;
+  onOpenNote: (noteId: string) => void;
 }) {
   if (!notes.length) {
     return (
@@ -26,7 +28,7 @@ export function ChatContainer({
   }
 
   return (
-    <ScrollArea className="h-full pr-2 py-4">
+    <ScrollArea className="h-full p-4 pl-0 rounded-2xl">
       <div className="space-y-5">
         {notes.map((note) => (
           <MessageBubble
@@ -34,6 +36,7 @@ export function ChatContainer({
             note={note}
             project={projects.find((project) => project.id === note.projectId)}
             onDelete={onDeleteNote}
+            onOpen={onOpenNote}
           />
         ))}
       </div>

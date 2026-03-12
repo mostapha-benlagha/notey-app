@@ -1,4 +1,5 @@
 import { useNotes } from "@/hooks/useNotes";
+import { useNavigate } from "react-router-dom";
 import { useProjectsStore } from "@/store/useProjectsStore";
 import { useNotesStore } from "@/store/useNotesStore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { ChatContainer } from "@/components/chat/ChatContainer";
 import { MessageInput } from "@/components/chat/MessageInput";
 
 export function ChatPage() {
+  const navigate = useNavigate();
   const projects = useProjectsStore((state) => state.projects);
   const addNote = useNotesStore((state) => state.addNote);
   const deleteNote = useNotesStore((state) => state.deleteNote);
@@ -26,7 +28,12 @@ export function ChatPage() {
           </div>
         </CardHeader>
         <CardContent className="min-h-0 flex-1">
-          <ChatContainer notes={filteredNotes} projects={projects} onDeleteNote={deleteNote} />
+          <ChatContainer
+            notes={filteredNotes}
+            projects={projects}
+            onDeleteNote={deleteNote}
+            onOpenNote={(noteId) => navigate(`/notes/${noteId}`)}
+          />
         </CardContent>
       </Card>
       <div className="shrink-0">

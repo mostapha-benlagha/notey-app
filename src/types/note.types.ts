@@ -10,6 +10,7 @@ export interface NoteAttachment {
 export interface Note {
   id: string;
   content: string;
+  richContent: string;
   projectId: string;
   tags: string[];
   createdAt: string;

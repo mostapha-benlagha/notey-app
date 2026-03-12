@@ -33,6 +33,8 @@ export const mockNotes: Note[] = [
   {
     id: "note1",
     content: "Prepare slides for security meeting. Send final agenda to the ops team before Friday.",
+    richContent:
+      "<p>Prepare slides for security meeting.</p><p>Send final agenda to the ops team before Friday.</p>",
     projectId: "work",
     tags: ["meeting", "security", "task"],
     createdAt: "2026-03-11T10:00:00.000Z",
@@ -41,6 +43,8 @@ export const mockNotes: Note[] = [
   {
     id: "note2",
     content: "Prototype onboarding flow for beta launch and review activation metrics with the startup advisor.",
+    richContent:
+      "<p>Prototype onboarding flow for beta launch and review activation metrics with the startup advisor.</p>",
     projectId: "startup",
     tags: ["product", "research", "task"],
     createdAt: "2026-03-11T12:30:00.000Z",
@@ -49,6 +53,8 @@ export const mockNotes: Note[] = [
   {
     id: "note3",
     content: "Research local-first sync patterns and compare CRDT tradeoffs for note collaboration.",
+    richContent:
+      "<p>Research local-first sync patterns and compare CRDT tradeoffs for note collaboration.</p>",
     projectId: "research",
     tags: ["research", "insight"],
     createdAt: "2026-03-11T15:45:00.000Z",

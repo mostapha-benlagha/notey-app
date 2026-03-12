@@ -1,30 +1,20 @@
 import { useRef, useState } from "react";
-import { ImagePlus, Paperclip, SendHorizontal } from "lucide-react";
+import { Expand, ImagePlus, Paperclip, SendHorizontal } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import type { NoteAttachment } from "@/types/note.types";
 import { AttachmentPreview } from "@/components/chat/AttachmentPreview";
 import { ProjectSelector } from "@/components/projects/ProjectSelector";
-
-function toAttachment(file: File): NoteAttachment {
-  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-  const kind = ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(extension) ? "image" : "file";
-  const sizeLabel = file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(file.size / 1024))} KB`;
-
-  return {
-    id: `attachment-${file.name}-${file.lastModified}`,
-    kind,
-    name: file.name,
-    sizeLabel,
-  };
-}
+import { toAttachment } from "@/utils/attachments";
 
 export function MessageInput({
   onSubmit,
 }: {
   onSubmit: (payload: { content: string; projectId: string; attachments: NoteAttachment[] }) => void;
 }) {
+  const navigate = useNavigate();
   const [content, setContent] = useState("");
   const [projectId, setProjectId] = useState("work");
   const [attachments, setAttachments] = useState<NoteAttachment[]>([]);
@@ -37,6 +27,16 @@ export function MessageInput({
     }
 
     setAttachments((current) => [...current, ...Array.from(files).map(toAttachment)]);
+  };
+
+  const openFullEditor = () => {
+    navigate("/notes/new", {
+      state: {
+        attachments,
+        content,
+        projectId,
+      },
+    });
   };
 
   const submit = () => {
@@ -73,6 +73,10 @@ export function MessageInput({
           <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
             <ProjectSelector value={projectId} onChange={setProjectId} />
             <div className="flex gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={openFullEditor}>
+                <Expand className="h-4 w-4" />
+                Full note
+              </Button>
               <Button type="button" variant="outline" size="sm" onClick={() => imageInputRef.current?.click()}>
                 <ImagePlus className="h-4 w-4" />
                 Image

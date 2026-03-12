@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { MessageInput } from "@/components/chat/MessageInput";
 
 describe("MessageInput", () => {
@@ -7,7 +8,11 @@ describe("MessageInput", () => {
     const user = userEvent.setup();
     const onSubmit = jest.fn();
 
-    render(<MessageInput onSubmit={onSubmit} />);
+    render(
+      <MemoryRouter>
+        <MessageInput onSubmit={onSubmit} />
+      </MemoryRouter>,
+    );
 
     await user.type(screen.getByLabelText(/message input/i), "Draft the customer handoff note");
     await user.selectOptions(screen.getByLabelText(/project selector/i), "startup");

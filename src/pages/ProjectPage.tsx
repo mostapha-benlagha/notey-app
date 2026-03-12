@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ChatContainer } from "@/components/chat/ChatContainer";
 import { ProjectOverview } from "@/components/projects/ProjectOverview";
 import { TaskList } from "@/components/tasks/TaskList";
@@ -9,6 +9,7 @@ import { useTasksStore } from "@/store/useTasksStore";
 
 export function ProjectPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const notes = useNotesStore((state) => state.notes);
   const deleteNote = useNotesStore((state) => state.deleteNote);
   const projects = useProjectsStore((state) => state.projects);
@@ -38,7 +39,12 @@ export function ProjectPage() {
           <CardTitle className="text-2xl">{project.name} notes</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChatContainer notes={projectNotes} projects={projects} onDeleteNote={deleteNote} />
+          <ChatContainer
+            notes={projectNotes}
+            projects={projects}
+            onDeleteNote={deleteNote}
+            onOpenNote={(noteId) => navigate(`/notes/${noteId}`)}
+          />
         </CardContent>
       </Card>
       <Card className="rounded-[32px]">
