@@ -32,7 +32,7 @@ export function ChatPage() {
             notes={filteredNotes}
             projects={projects}
             onDeleteNote={deleteNote}
-            onOpenNote={(noteId) => navigate(`/notes/${noteId}`)}
+            onOpenNote={(noteId) => navigate(`/app/notes/${noteId}`, { state: { returnTo: "/app" } })}
           />
         </CardContent>
       </Card>

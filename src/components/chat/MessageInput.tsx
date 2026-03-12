@@ -30,11 +30,12 @@ export function MessageInput({
   };
 
   const openFullEditor = () => {
-    navigate("/notes/new", {
+    navigate("/app/notes/new", {
       state: {
         attachments,
         content,
         projectId,
+        returnTo: "/app",
       },
     });
   };

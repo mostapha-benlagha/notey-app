@@ -24,7 +24,7 @@ export function ProjectItem({
         <span className="truncate">{project.name}</span>
       </Button>
       <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-2xl">
-        <Link to={`/projects/${project.id}`} aria-label={`Open ${project.name}`}>
+        <Link to={`/app/projects/${project.id}`} aria-label={`Open ${project.name}`}>
           <FolderKanban className="h-4 w-4" />
         </Link>
       </Button>

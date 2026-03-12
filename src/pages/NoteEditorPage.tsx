@@ -15,6 +15,7 @@ interface DraftState {
   attachments?: NoteAttachment[];
   content?: string;
   projectId?: string;
+  returnTo?: string;
 }
 
 export function NoteEditorPage() {
@@ -38,6 +39,7 @@ export function NoteEditorPage() {
 
   const initialProjectId = existingNote?.projectId ?? draftState?.projectId ?? "work";
   const initialAttachments = existingNote?.attachments ?? draftState?.attachments ?? [];
+  const returnTo = draftState?.returnTo ?? "/app";
 
   const [projectId, setProjectId] = useState(initialProjectId);
   const [attachments, setAttachments] = useState<NoteAttachment[]>(initialAttachments);
@@ -67,7 +69,7 @@ export function NoteEditorPage() {
         projectId,
         richContent: content,
       });
-      navigate("/", { replace: false, state: { focusNoteId: note.id } });
+      navigate(returnTo, { replace: false, state: { focusNoteId: note.id } });
       return;
     }
 
@@ -81,7 +83,7 @@ export function NoteEditorPage() {
       projectId,
       richContent: content,
     });
-    navigate("/", { replace: false, state: { focusNoteId: id } });
+    navigate(returnTo, { replace: false, state: { focusNoteId: id } });
   };
 
   if (!isNew && !existingNote) {
@@ -101,9 +103,9 @@ export function NoteEditorPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="ghost" className="rounded-2xl">
-            <Link to="/">
+            <Link to={returnTo}>
               <ArrowLeft className="h-4 w-4" />
-              Back to chat
+              Back
             </Link>
           </Button>
           <Button className="rounded-2xl" onClick={handleSave}>

@@ -22,9 +22,10 @@ export function ProjectPage() {
   const projectNotes = notes.filter((note) => note.projectId === id);
   const projectTasks = tasks.filter((task) => task.projectId === id);
   const openNewProjectNote = () =>
-    navigate("/notes/new", {
+    navigate("/app/notes/new", {
       state: {
         projectId: project?.id ?? "work",
+        returnTo: project ? `/app/projects/${project.id}` : "/app",
       },
     });
 
@@ -41,12 +42,12 @@ export function ProjectPage() {
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button asChild variant="ghost" className="rounded-2xl">
-              <Link to="/">
+              <Link to="/app">
                 <ArrowLeft className="h-4 w-4" />
                 Back to chat
               </Link>
             </Button>
-            <Button className="rounded-2xl" onClick={() => navigate("/")}>
+            <Button className="rounded-2xl" onClick={() => navigate("/app")}>
               <Sparkles className="h-4 w-4" />
               Browse active projects
             </Button>
@@ -67,7 +68,7 @@ export function ProjectPage() {
           </div>
           <div className="flex flex-wrap gap-3">
             <Button asChild variant="ghost" className="rounded-2xl">
-              <Link to="/">
+              <Link to="/app">
                 <ArrowLeft className="h-4 w-4" />
                 Back to chat
               </Link>
@@ -91,7 +92,7 @@ export function ProjectPage() {
               notes={projectNotes}
               projects={projects}
               onDeleteNote={deleteNote}
-              onOpenNote={(noteId) => navigate(`/notes/${noteId}`)}
+              onOpenNote={(noteId) => navigate(`/app/notes/${noteId}`, { state: { returnTo: `/app/projects/${project.id}` } })}
             />
           ) : (
             <div className="flex min-h-[280px] flex-col items-center justify-center rounded-[28px] border border-dashed border-border bg-white/45 px-6 py-10 text-center">
