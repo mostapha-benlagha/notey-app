@@ -61,7 +61,7 @@ export function ProjectPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col gap-6">
       <Card className="rounded-[32px] bg-white/75">
         <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -83,58 +83,62 @@ export function ProjectPage() {
           </div>
         </CardHeader>
       </Card>
-      <ProjectOverview project={project} notes={projectNotes} tasks={projectTasks} />
-      <Card className="rounded-[32px]">
-        <CardHeader>
-          <CardDescription>Project conversation</CardDescription>
-          <CardTitle className="text-2xl">{project.name} notes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {projectNotes.length ? (
-            <ChatContainer
-              notes={projectNotes}
-              projects={projects}
-              onDeleteNote={deleteNote}
-              onOpenNote={(noteId) => navigate(`/app/notes/${noteId}`, { state: { returnTo: `/app/projects/${project.id}` } })}
-            />
-          ) : (
-            <div className="flex min-h-[280px] flex-col items-center justify-center rounded-[28px] border border-dashed border-border bg-white/45 px-6 py-10 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-[22px] bg-primary/10 text-primary">
-                <FilePenLine className="h-6 w-6" />
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        <div className="space-y-6 pb-6">
+          <ProjectOverview project={project} notes={projectNotes} tasks={projectTasks} />
+          <Card className="rounded-[32px]">
+            <CardHeader>
+              <CardDescription>Project conversation</CardDescription>
+              <CardTitle className="text-2xl">{project.name} notes</CardTitle>
+            </CardHeader>
+            <CardContent className="min-h-0">
+              {projectNotes.length ? (
+                <ChatContainer
+                  notes={projectNotes}
+                  projects={projects}
+                  onDeleteNote={deleteNote}
+                  onOpenNote={(noteId) => navigate(`/app/notes/${noteId}`, { state: { returnTo: `/app/projects/${project.id}` } })}
+                />
+              ) : (
+                <div className="flex min-h-[280px] flex-col items-center justify-center rounded-[28px] border border-dashed border-border bg-white/45 px-6 py-10 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-[22px] bg-primary/10 text-primary">
+                    <FilePenLine className="h-6 w-6" />
+                  </div>
+                  <h3 className="mt-5 text-xl font-semibold">Start this project with a first note</h3>
+                  <p className="mt-3 max-w-lg text-sm leading-7 text-muted-foreground">
+                    Capture a meeting recap, working draft, or research update here. The note will be linked directly to {project.name}.
+                  </p>
+                  <Button className="mt-6 rounded-2xl" onClick={openNewProjectNote}>
+                    <FilePenLine className="h-4 w-4" />
+                    Create note for {project.name}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          <Card className="rounded-[32px]">
+            <CardHeader>
+              <CardDescription>Project tasks</CardDescription>
+              <CardTitle className="text-2xl">Task pipeline lives in the board</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-[28px] border border-dashed border-border bg-white/45 px-6 py-8 text-sm leading-7 text-muted-foreground">
+                Tasks for this project now live in the kanban board. Use the board to move tasks across statuses, create custom columns, and manage trash.
               </div>
-              <h3 className="mt-5 text-xl font-semibold">Start this project with a first note</h3>
-              <p className="mt-3 max-w-lg text-sm leading-7 text-muted-foreground">
-                Capture a meeting recap, working draft, or research update here. The note will be linked directly to {project.name}.
-              </p>
-              <Button className="mt-6 rounded-2xl" onClick={openNewProjectNote}>
-                <FilePenLine className="h-4 w-4" />
-                Create note for {project.name}
-              </Button>
-            </div>
+            </CardContent>
+          </Card>
+          {!!trashedProjectTasks.length && (
+            <TaskTrashPanel
+              tasks={trashedProjectTasks}
+              statuses={statuses}
+              notes={notes}
+              projects={projects}
+              onRestore={restoreTask}
+              onPermanentDelete={permanentlyDeleteTask}
+            />
           )}
-        </CardContent>
-      </Card>
-      <Card className="rounded-[32px]">
-        <CardHeader>
-          <CardDescription>Project tasks</CardDescription>
-          <CardTitle className="text-2xl">Task pipeline lives in the board</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-[28px] border border-dashed border-border bg-white/45 px-6 py-8 text-sm leading-7 text-muted-foreground">
-            Tasks for this project now live in the kanban board. Use the board to move tasks across statuses, create custom columns, and manage trash.
-          </div>
-        </CardContent>
-      </Card>
-      {!!trashedProjectTasks.length && (
-        <TaskTrashPanel
-          tasks={trashedProjectTasks}
-          statuses={statuses}
-          notes={notes}
-          projects={projects}
-          onRestore={restoreTask}
-          onPermanentDelete={permanentlyDeleteTask}
-        />
-      )}
+        </div>
+      </div>
     </div>
   );
 }
