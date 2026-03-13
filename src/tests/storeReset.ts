@@ -1,4 +1,4 @@
-import { mockNotes, mockProjects, mockTasks } from "@/services/mockData";
+import { mockNotes, mockProjects, mockTasks, mockTaskStatuses } from "@/services/mockData";
 import { useNotesStore } from "@/store/useNotesStore";
 import { useProjectsStore } from "@/store/useProjectsStore";
 import { useTasksStore } from "@/store/useTasksStore";
@@ -10,6 +10,7 @@ export function resetAllStores() {
   });
 
   useTasksStore.setState({
+    statuses: [...mockTaskStatuses],
     tasks: [...mockTasks],
   });
 

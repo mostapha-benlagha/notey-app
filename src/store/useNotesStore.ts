@@ -62,9 +62,10 @@ export const useNotesStore = create<NotesState>((set, get) => ({
         addTask({
           id: `task-${note.id}-${index}`,
           title,
-          status: "pending",
+          statusId: "draft",
           projectId: note.projectId,
           noteId: note.id,
+          deletedAt: null,
         }),
       );
     }

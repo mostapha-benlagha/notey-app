@@ -12,7 +12,7 @@ export function ProjectOverview({
   notes: Note[];
   tasks: Task[];
 }) {
-  const completed = tasks.filter((task) => task.status === "completed").length;
+  const completed = tasks.filter((task) => task.statusId === "done" && !task.deletedAt).length;
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">

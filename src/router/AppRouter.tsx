@@ -11,6 +11,7 @@ import { LoginPage } from "@/pages/LoginPage";
 import { ProjectPage } from "@/pages/ProjectPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { SignupPage } from "@/pages/SignupPage";
+import { TaskTrashPage } from "@/pages/TaskTrashPage";
 import { TasksPage } from "@/pages/TasksPage";
 
 const NoteEditorPage = lazy(() =>
@@ -49,6 +50,7 @@ export function AppRouter() {
             }
           />
           <Route path="/app/tasks" element={<TasksPage />} />
+          <Route path="/app/tasks/trash" element={<TaskTrashPage />} />
           <Route path="/app/projects/:id" element={<ProjectPage />} />
           <Route path="/app/settings" element={<SettingsPage />} />
           <Route path="/app/account" element={<AccountPage />} />

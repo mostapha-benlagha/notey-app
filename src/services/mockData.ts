@@ -1,6 +1,6 @@
 import type { Note } from "@/types/note.types";
 import type { Project } from "@/types/project.types";
-import type { Task } from "@/types/task.types";
+import type { Task, TaskStatus } from "@/types/task.types";
 
 export const mockProjects: Project[] = [
   {
@@ -66,22 +66,32 @@ export const mockTasks: Task[] = [
   {
     id: "task1",
     title: "Prepare slides for security meeting",
-    status: "pending",
+    statusId: "draft",
     projectId: "work",
     noteId: "note1",
+    deletedAt: null,
   },
   {
     id: "task2",
     title: "Send final agenda to the ops team before Friday",
-    status: "completed",
+    statusId: "in-progress",
     projectId: "work",
     noteId: "note1",
+    deletedAt: null,
   },
   {
     id: "task3",
     title: "Prototype onboarding flow for beta launch",
-    status: "pending",
+    statusId: "done",
     projectId: "startup",
     noteId: "note2",
+    deletedAt: null,
   },
+];
+
+export const mockTaskStatuses: TaskStatus[] = [
+  { id: "draft", label: "Draft", colorClass: "bg-slate-200 text-slate-700", kind: "system" },
+  { id: "todo", label: "To-do", colorClass: "bg-sky-100 text-sky-700", kind: "system" },
+  { id: "in-progress", label: "In progress", colorClass: "bg-amber-100 text-amber-700", kind: "system" },
+  { id: "done", label: "Done", colorClass: "bg-emerald-100 text-emerald-700", kind: "system" },
 ];

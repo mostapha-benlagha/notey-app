@@ -1,9 +1,17 @@
-export type TaskStatus = "pending" | "completed";
+export type TaskStatusId = string;
+
+export interface TaskStatus {
+  id: TaskStatusId;
+  label: string;
+  colorClass: string;
+  kind: "system" | "custom";
+}
 
 export interface Task {
   id: string;
   title: string;
-  status: TaskStatus;
+  statusId: TaskStatusId;
   projectId: string;
   noteId: string;
+  deletedAt: string | null;
 }

@@ -2,7 +2,7 @@ import { ArrowLeft, FilePenLine, FolderSearch, Sparkles } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ChatContainer } from "@/components/chat/ChatContainer";
 import { ProjectOverview } from "@/components/projects/ProjectOverview";
-import { TaskList } from "@/components/tasks/TaskList";
+import { TaskTrashPanel } from "@/components/tasks/TaskTrashPanel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNotesStore } from "@/store/useNotesStore";
@@ -15,12 +15,15 @@ export function ProjectPage() {
   const notes = useNotesStore((state) => state.notes);
   const deleteNote = useNotesStore((state) => state.deleteNote);
   const projects = useProjectsStore((state) => state.projects);
+  const statuses = useTasksStore((state) => state.statuses);
   const tasks = useTasksStore((state) => state.tasks);
-  const toggleTask = useTasksStore((state) => state.toggleTask);
+  const restoreTask = useTasksStore((state) => state.restoreTask);
+  const permanentlyDeleteTask = useTasksStore((state) => state.permanentlyDeleteTask);
 
   const project = projects.find((item) => item.id === id);
   const projectNotes = notes.filter((note) => note.projectId === id);
-  const projectTasks = tasks.filter((task) => task.projectId === id);
+  const projectTasks = tasks.filter((task) => task.projectId === id && !task.deletedAt);
+  const trashedProjectTasks = tasks.filter((task) => task.projectId === id && !!task.deletedAt);
   const openNewProjectNote = () =>
     navigate("/app/notes/new", {
       state: {
@@ -114,18 +117,24 @@ export function ProjectPage() {
       <Card className="rounded-[32px]">
         <CardHeader>
           <CardDescription>Project tasks</CardDescription>
-          <CardTitle className="text-2xl">Extracted actions</CardTitle>
+          <CardTitle className="text-2xl">Task pipeline lives in the board</CardTitle>
         </CardHeader>
         <CardContent>
-          {projectTasks.length ? (
-            <TaskList tasks={projectTasks} notes={notes} projects={projects} onToggle={toggleTask} />
-          ) : (
-            <div className="rounded-[28px] border border-dashed border-border bg-white/45 px-6 py-8 text-sm leading-7 text-muted-foreground">
-              No extracted tasks yet. Once you capture action-oriented notes for this project, they will show up here automatically.
-            </div>
-          )}
+          <div className="rounded-[28px] border border-dashed border-border bg-white/45 px-6 py-8 text-sm leading-7 text-muted-foreground">
+            Tasks for this project now live in the kanban board. Use the board to move tasks across statuses, create custom columns, and manage trash.
+          </div>
         </CardContent>
       </Card>
+      {!!trashedProjectTasks.length && (
+        <TaskTrashPanel
+          tasks={trashedProjectTasks}
+          statuses={statuses}
+          notes={notes}
+          projects={projects}
+          onRestore={restoreTask}
+          onPermanentDelete={permanentlyDeleteTask}
+        />
+      )}
     </div>
   );
 }
