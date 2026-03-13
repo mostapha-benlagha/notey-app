@@ -1,11 +1,16 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { deleteProfile, fetchMe, getStoredToken, login, setStoredToken, signup, updateProfile } from "@/services/api";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import type { User } from "@/types/user.types";
 
-interface AuthPayload {
+interface LoginInput {
   email: string;
-  firstName?: string;
-  lastName?: string;
+  password: string;
+}
+
+interface SignupInput extends LoginInput {
+  firstName: string;
+  lastName: string;
 }
 
 interface ProfileUpdateInput {
@@ -16,75 +21,89 @@ interface ProfileUpdateInput {
 
 interface AuthState {
   isAuthenticated: boolean;
+  isHydrating: boolean;
+  isSubmitting: boolean;
   user: User | null;
-  login: (payload: AuthPayload) => void;
-  signup: (payload: Required<AuthPayload>) => void;
+  initialize: () => Promise<void>;
+  login: (payload: LoginInput) => Promise<void>;
+  signup: (payload: SignupInput) => Promise<void>;
   logout: () => void;
-  updateProfile: (payload: ProfileUpdateInput) => void;
-  deleteAccount: () => void;
+  updateProfile: (payload: ProfileUpdateInput) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
-function buildUser(payload: Required<AuthPayload>): User {
-  return {
-    id: "user-demo",
-    email: payload.email,
-    firstName: payload.firstName,
-    lastName: payload.lastName,
-    joinedAt: "2026-03-01T09:00:00.000Z",
-    plan: "Pro Trial",
-    role: "Founder",
-  };
-}
+export const useAuthStore = create<AuthState>()((set) => ({
+  isAuthenticated: false,
+  isHydrating: true,
+  isSubmitting: false,
+  user: null,
+  initialize: async () => {
+    const token = getStoredToken();
 
-const defaultUser = buildUser({
-  email: "alex@notey.app",
-  firstName: "Alex",
-  lastName: "Morgan",
-});
+    if (!token) {
+      set({ isAuthenticated: false, user: null, isHydrating: false });
+      return;
+    }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      isAuthenticated: false,
-      user: null,
-      login: ({ email, firstName, lastName }) =>
-        set({
-          isAuthenticated: true,
-          user: buildUser({
-            email,
-            firstName: firstName || defaultUser.firstName,
-            lastName: lastName || defaultUser.lastName,
-          }),
-        }),
-      signup: ({ email, firstName, lastName }) =>
-        set({
-          isAuthenticated: true,
-          user: buildUser({ email, firstName, lastName }),
-        }),
-      logout: () =>
-        set({
-          isAuthenticated: false,
-          user: null,
-        }),
-      updateProfile: ({ email, firstName, lastName }) =>
-        set((state) => ({
-          user: state.user
-            ? {
-                ...state.user,
-                email,
-                firstName,
-                lastName,
-              }
-            : null,
-        })),
-      deleteAccount: () =>
-        set({
-          isAuthenticated: false,
-          user: null,
-        }),
-    }),
-    {
-      name: "notey-auth",
-    },
-  ),
-);
+    try {
+      const { user } = await fetchMe();
+      set({ isAuthenticated: true, user, isHydrating: false });
+      await useSettingsStore.getState().initialize();
+    } catch {
+      setStoredToken(null);
+      useSettingsStore.getState().clear();
+      set({ isAuthenticated: false, user: null, isHydrating: false });
+    }
+  },
+  login: async (payload) => {
+    set({ isSubmitting: true });
+    try {
+      const response = await login(payload);
+      setStoredToken(response.token);
+      set({ isAuthenticated: true, user: response.user, isSubmitting: false });
+      await useSettingsStore.getState().initialize();
+    } catch (error) {
+      set({ isSubmitting: false });
+      throw error;
+    }
+  },
+  signup: async (payload) => {
+    set({ isSubmitting: true });
+    try {
+      const response = await signup(payload);
+      setStoredToken(response.token);
+      set({ isAuthenticated: true, user: response.user, isSubmitting: false });
+      await useSettingsStore.getState().initialize();
+    } catch (error) {
+      set({ isSubmitting: false });
+      throw error;
+    }
+  },
+  logout: () => {
+    setStoredToken(null);
+    useSettingsStore.getState().clear();
+    set({ isAuthenticated: false, user: null, isHydrating: false, isSubmitting: false });
+  },
+  updateProfile: async (payload) => {
+    set({ isSubmitting: true });
+    try {
+      const response = await updateProfile(payload);
+      set({ user: response.profile, isSubmitting: false });
+    } catch (error) {
+      set({ isSubmitting: false });
+      throw error;
+    }
+  },
+  deleteAccount: async () => {
+    set({ isSubmitting: true });
+    try {
+      await deleteProfile();
+      setStoredToken(null);
+      useSettingsStore.getState().clear();
+      set({ isAuthenticated: false, user: null, isHydrating: false, isSubmitting: false });
+    } catch (error) {
+      set({ isSubmitting: false });
+      throw error;
+    }
+  },
+}));

@@ -65,22 +65,6 @@ export function Sidebar() {
           Account
         </NavLink>
       </nav>
-      <div className="mt-4 rounded-[24px] border border-white/75 bg-white/70 p-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold">Workspace width</p>
-            <p className="text-xs text-muted-foreground">{fullWidthWorkspaceEnabled ? "Full width enabled" : "Centered at 1600px"}</p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="rounded-2xl"
-            onClick={() => setBooleanSetting("fullWidthWorkspaceEnabled", !fullWidthWorkspaceEnabled)}
-          >
-            {fullWidthWorkspaceEnabled ? "Restore" : "Expand"}
-          </Button>
-        </div>
-      </div>
       <Separator className="my-6" />
       <div className="flex-1">
         <div className="mb-3 px-2">

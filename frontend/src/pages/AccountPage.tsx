@@ -1,6 +1,7 @@
 import { ShieldAlert, Trash2, UserRound } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,12 +22,22 @@ export function AccountPage() {
   const user = useAuthStore((state) => state.user);
   const updateProfile = useAuthStore((state) => state.updateProfile);
   const deleteAccount = useAuthStore((state) => state.deleteAccount);
+  const isSubmitting = useAuthStore((state) => state.isSubmitting);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     email: user?.email ?? "",
     firstName: user?.firstName ?? "",
     lastName: user?.lastName ?? "",
   });
+
+  useEffect(() => {
+    setForm({
+      email: user?.email ?? "",
+      firstName: user?.firstName ?? "",
+      lastName: user?.lastName ?? "",
+    });
+  }, [user]);
 
   if (!user) {
     return null;
@@ -76,12 +87,24 @@ export function AccountPage() {
             </div>
             <Button
               className="rounded-2xl"
-              onClick={() => {
-                updateProfile(form);
+              disabled={isSubmitting}
+              onClick={async () => {
+                try {
+                  setError(null);
+                  await updateProfile(form);
+                } catch (requestError) {
+                  if (axios.isAxiosError<{ message?: string }>(requestError)) {
+                    setError(requestError.response?.data?.message ?? "Unable to save profile.");
+                    return;
+                  }
+
+                  setError("Unable to save profile.");
+                }
               }}
             >
-              Save profile
+              {isSubmitting ? "Saving..." : "Save profile"}
             </Button>
+            {error ? <p className="text-sm text-rose-600">{error}</p> : null}
           </div>
           <div className="space-y-4">
             <Card className="rounded-[28px] bg-secondary/65">
@@ -142,8 +165,8 @@ export function AccountPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               tone="destructive"
-              onClick={() => {
-                deleteAccount();
+              onClick={async () => {
+                await deleteAccount();
                 navigate("/", { replace: true });
               }}
             >

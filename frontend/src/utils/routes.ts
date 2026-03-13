@@ -7,5 +7,5 @@ const startPageMap: Record<AppStartPage, string> = {
 };
 
 export function getDefaultAppRoute() {
-  return startPageMap[useSettingsStore.getState().appStartPage];
+  return startPageMap[useSettingsStore.getState().appStartPage ?? "chat"];
 }
