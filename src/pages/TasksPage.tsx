@@ -17,6 +17,7 @@ export function TasksPage() {
   const statuses = useTasksStore((state) => state.statuses);
   const tasks = useTasksStore((state) => state.tasks);
   const createStatus = useTasksStore((state) => state.createStatus);
+  const saveStatuses = useTasksStore((state) => state.saveStatuses);
   const moveTask = useTasksStore((state) => state.moveTask);
   const toggleTask = useTasksStore((state) => state.toggleTask);
   const trashTask = useTasksStore((state) => state.trashTask);
@@ -78,6 +79,7 @@ export function TasksPage() {
             onToggleDone={toggleTask}
             onTrashTask={trashTask}
             onCreateStatus={(label) => createStatus(label)}
+            onSaveStatuses={saveStatuses}
           />
         </CardContent>
       </Card>

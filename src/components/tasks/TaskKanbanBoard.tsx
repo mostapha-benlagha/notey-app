@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { KanbanTaskCard } from "@/components/tasks/KanbanTaskCard";
+import { StatusSettingsDialog } from "@/components/tasks/StatusSettingsDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ export function TaskKanbanBoard({
   onToggleDone,
   onTrashTask,
   onCreateStatus,
+  onSaveStatuses,
 }: {
   statuses: TaskStatus[];
   tasks: Task[];
@@ -27,6 +29,7 @@ export function TaskKanbanBoard({
   onToggleDone: (taskId: string) => void;
   onTrashTask: (taskId: string) => void;
   onCreateStatus: (label: string) => void;
+  onSaveStatuses: (statuses: TaskStatus[]) => void;
 }) {
   const [newStatus, setNewStatus] = useState("");
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
@@ -51,6 +54,7 @@ export function TaskKanbanBoard({
           <Plus className="h-4 w-4" />
           Add status
         </Button>
+        <StatusSettingsDialog statuses={statuses} onSave={onSaveStatuses} />
       </div>
       <ScrollArea className="min-h-0 flex-1 p-4">
         <div className="flex min-w-max gap-4 pb-2">

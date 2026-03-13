@@ -6,7 +6,8 @@ interface TasksState {
   statuses: TaskStatus[];
   tasks: Task[];
   addTask: (task: Task) => void;
-  createStatus: (label: string) => TaskStatus | null;
+  createStatus: (label: string, colorClass?: string) => TaskStatus | null;
+  saveStatuses: (statuses: TaskStatus[]) => void;
   moveTask: (taskId: string, statusId: string) => void;
   toggleTask: (taskId: string) => void;
   trashTask: (taskId: string) => void;
@@ -24,7 +25,7 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     set((state) => ({
       tasks: [task, ...state.tasks],
     })),
-  createStatus: (label) => {
+  createStatus: (label, colorClass = "bg-violet-100 text-violet-700") => {
     const normalized = label.trim();
     if (!normalized) {
       return null;
@@ -33,7 +34,7 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     const status: TaskStatus = {
       id: normalized.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       label: normalized,
-      colorClass: "bg-violet-100 text-violet-700",
+      colorClass,
       kind: "custom",
     };
 
@@ -48,6 +49,36 @@ export const useTasksStore = create<TasksState>((set, get) => ({
 
     return status;
   },
+  saveStatuses: (nextStatuses) =>
+    set((state) => {
+      if (!nextStatuses.length) {
+        return state;
+      }
+
+      const existingIds = new Set(nextStatuses.map((status) => status.id));
+
+      const tasks = state.tasks.map((task) => {
+        if (existingIds.has(task.statusId)) {
+          return task;
+        }
+
+        const removedIndex = state.statuses.findIndex((status) => status.id === task.statusId);
+        const fallbackStatus =
+          nextStatuses[Math.max(0, Math.min(removedIndex - 1, nextStatuses.length - 1))] ||
+          nextStatuses[Math.max(0, Math.min(removedIndex, nextStatuses.length - 1))] ||
+          nextStatuses[0];
+
+        return {
+          ...task,
+          statusId: fallbackStatus.id,
+        };
+      });
+
+      return {
+        statuses: nextStatuses,
+        tasks,
+      };
+    }),
   moveTask: (taskId, statusId) =>
     set((state) => ({
       tasks: state.tasks.map((task) => (task.id === taskId ? { ...task, statusId } : task)),
