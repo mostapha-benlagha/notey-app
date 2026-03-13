@@ -1,4 +1,4 @@
-import { LogOut, Settings2, Sparkles, SquareCheckBig, UserCircle2 } from "lucide-react";
+import { LogOut, Maximize2, Minimize2, Settings2, Sparkles, SquareCheckBig, UserCircle2 } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { ProjectList } from "@/components/projects/ProjectList";
 import { Avatar } from "@/components/ui/avatar";
@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { useProjects } from "@/hooks/useProjects";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -20,18 +21,32 @@ export function Sidebar() {
   const { projects, selectedProjectId, selectProject } = useProjects();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const fullWidthWorkspaceEnabled = useSettingsStore((state) => state.fullWidthWorkspaceEnabled);
+  const setBooleanSetting = useSettingsStore((state) => state.setBooleanSetting);
 
   return (
     <Card className="surface-grid flex h-full flex-col rounded-[32px] p-5">
-      <Link to="/app" className="flex items-center gap-3 px-2">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-          <Sparkles className="h-5 w-5" />
-        </div>
-        <div>
-          <p className="text-lg font-extrabold">Notey</p>
-          <p className="text-sm text-muted-foreground">AI note assistant</p>
-        </div>
-      </Link>
+      <div className="flex items-start justify-between gap-3 px-2">
+        <Link to="/app" className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-lg font-extrabold">Notey</p>
+            <p className="text-sm text-muted-foreground">AI note assistant</p>
+          </div>
+        </Link>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10 rounded-2xl"
+          onClick={() => setBooleanSetting("fullWidthWorkspaceEnabled", !fullWidthWorkspaceEnabled)}
+          aria-label={fullWidthWorkspaceEnabled ? "Restore centered layout" : "Expand to full width"}
+          title={fullWidthWorkspaceEnabled ? "Restore centered layout" : "Expand to full width"}
+        >
+          {fullWidthWorkspaceEnabled ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
+      </div>
       <nav className="mt-8 space-y-1">
         <NavLink to="/app" end className={navLinkClass}>
           <Sparkles className="h-4 w-4" />
@@ -50,6 +65,22 @@ export function Sidebar() {
           Account
         </NavLink>
       </nav>
+      <div className="mt-4 rounded-[24px] border border-white/75 bg-white/70 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold">Workspace width</p>
+            <p className="text-xs text-muted-foreground">{fullWidthWorkspaceEnabled ? "Full width enabled" : "Centered at 1600px"}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="rounded-2xl"
+            onClick={() => setBooleanSetting("fullWidthWorkspaceEnabled", !fullWidthWorkspaceEnabled)}
+          >
+            {fullWidthWorkspaceEnabled ? "Restore" : "Expand"}
+          </Button>
+        </div>
+      </div>
       <Separator className="my-6" />
       <div className="flex-1">
         <div className="mb-3 px-2">

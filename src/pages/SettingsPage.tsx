@@ -38,6 +38,7 @@ export function SettingsPage() {
     appStartPage,
     compactBoardEnabled,
     autoOpenLastProject,
+    fullWidthWorkspaceEnabled,
     setBooleanSetting,
     setDigestCadence,
     setDefaultNoteMode,
@@ -45,7 +46,7 @@ export function SettingsPage() {
   } = useSettingsStore();
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col gap-6">
       <Card className="rounded-[32px]">
         <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -60,9 +61,9 @@ export function SettingsPage() {
           </div>
         </CardHeader>
       </Card>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="space-y-6">
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        <div className="grid gap-6 pb-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="space-y-6">
           <Card className="rounded-[32px]">
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -161,68 +162,74 @@ export function SettingsPage() {
               />
             </CardContent>
           </Card>
-        </div>
+          </div>
 
-        <div className="space-y-6">
-          <Card className="rounded-[32px]">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-secondary p-3">
-                  <Workflow className="h-5 w-5" />
+          <div className="space-y-6">
+            <Card className="rounded-[32px]">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="rounded-2xl bg-secondary p-3">
+                    <Workflow className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardDescription>Workspace</CardDescription>
+                    <CardTitle className="text-2xl">Shape the app shell</CardTitle>
+                  </div>
                 </div>
-                <div>
-                  <CardDescription>Workspace</CardDescription>
-                  <CardTitle className="text-2xl">Shape the app shell</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <SettingRow
+                  title="Open this page after login"
+                  description="Choose where the app should drop you after authentication."
+                  control={
+                    <Select value={appStartPage} onChange={(event) => setAppStartPage(event.target.value as "chat" | "tasks" | "account")} className="w-[180px]">
+                      <option value="chat">Chat</option>
+                      <option value="tasks">Tasks</option>
+                      <option value="account">Account</option>
+                    </Select>
+                  }
+                />
+                <SettingRow
+                  title="Compact task board"
+                  description="Use a tighter layout for the kanban board when managing many tasks."
+                  control={<Switch checked={compactBoardEnabled} onCheckedChange={(value) => setBooleanSetting("compactBoardEnabled", value)} />}
+                />
+                <SettingRow
+                  title="Full-width workspace"
+                  description="Remove the 1600px app shell limit and let the workspace stretch across the full viewport width."
+                  control={<Switch checked={fullWidthWorkspaceEnabled} onCheckedChange={(value) => setBooleanSetting("fullWidthWorkspaceEnabled", value)} />}
+                />
+                <SettingRow
+                  title="Auto-open last selected project"
+                  description="Restore your last active project context when returning to the app."
+                  control={<Switch checked={autoOpenLastProject} onCheckedChange={(value) => setBooleanSetting("autoOpenLastProject", value)} />}
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-[32px] bg-primary text-primary-foreground">
+              <CardContent className="p-6">
+                <p className="text-sm uppercase tracking-[0.2em] text-primary-foreground/80">Recommended split</p>
+                <h3 className="mt-3 text-2xl font-extrabold">Put identity in Account, behavior in Settings.</h3>
+                <p className="mt-4 text-sm leading-7 text-primary-foreground/85">
+                  This keeps profile and billing-adjacent actions separate from operational controls like security, AI behavior, and workspace preferences.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-[32px]">
+              <CardContent className="p-6">
+                <div className="inline-flex rounded-full bg-secondary px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                  What belongs here
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <SettingRow
-                title="Open this page after login"
-                description="Choose where the app should drop you after authentication."
-                control={
-                  <Select value={appStartPage} onChange={(event) => setAppStartPage(event.target.value as "chat" | "tasks" | "account")} className="w-[180px]">
-                    <option value="chat">Chat</option>
-                    <option value="tasks">Tasks</option>
-                    <option value="account">Account</option>
-                  </Select>
-                }
-              />
-              <SettingRow
-                title="Compact task board"
-                description="Use a tighter layout for the kanban board when managing many tasks."
-                control={<Switch checked={compactBoardEnabled} onCheckedChange={(value) => setBooleanSetting("compactBoardEnabled", value)} />}
-              />
-              <SettingRow
-                title="Auto-open last selected project"
-                description="Restore your last active project context when returning to the app."
-                control={<Switch checked={autoOpenLastProject} onCheckedChange={(value) => setBooleanSetting("autoOpenLastProject", value)} />}
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-[32px] bg-primary text-primary-foreground">
-            <CardContent className="p-6">
-              <p className="text-sm uppercase tracking-[0.2em] text-primary-foreground/80">Recommended split</p>
-              <h3 className="mt-3 text-2xl font-extrabold">Put identity in Account, behavior in Settings.</h3>
-              <p className="mt-4 text-sm leading-7 text-primary-foreground/85">
-                This keeps profile and billing-adjacent actions separate from operational controls like security, AI behavior, and workspace preferences.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-[32px]">
-            <CardContent className="p-6">
-              <div className="inline-flex rounded-full bg-secondary px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                What belongs here
-              </div>
-              <ul className="mt-4 space-y-3 text-sm leading-7 text-muted-foreground">
-                <li>Security controls like 2FA, login alerts, and session policy.</li>
-                <li>AI behavior such as tagging, task extraction, and default capture mode.</li>
-                <li>Workspace-level preferences like start page, board density, and reminders.</li>
-              </ul>
-            </CardContent>
-          </Card>
+                <ul className="mt-4 space-y-3 text-sm leading-7 text-muted-foreground">
+                  <li>Security controls like 2FA, login alerts, and session policy.</li>
+                  <li>AI behavior such as tagging, task extraction, and default capture mode.</li>
+                  <li>Workspace-level preferences like start page, board density, and reminders.</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

@@ -17,6 +17,7 @@ interface SettingsState {
   appStartPage: AppStartPage;
   compactBoardEnabled: boolean;
   autoOpenLastProject: boolean;
+  fullWidthWorkspaceEnabled: boolean;
   setBooleanSetting: (
     key:
       | "twoFactorEnabled"
@@ -26,7 +27,8 @@ interface SettingsState {
       | "taskExtractionEnabled"
       | "reminderEmailsEnabled"
       | "compactBoardEnabled"
-      | "autoOpenLastProject",
+      | "autoOpenLastProject"
+      | "fullWidthWorkspaceEnabled",
     value: boolean,
   ) => void;
   setDigestCadence: (value: DigestCadence) => void;
@@ -48,6 +50,7 @@ export const useSettingsStore = create<SettingsState>()(
       appStartPage: "chat",
       compactBoardEnabled: false,
       autoOpenLastProject: true,
+      fullWidthWorkspaceEnabled: false,
       setBooleanSetting: (key, value) =>
         set({
           [key]: value,
