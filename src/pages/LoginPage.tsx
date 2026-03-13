@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/store/useAuthStore";
+import { getDefaultAppRoute } from "@/utils/routes";
 
 export function LoginPage() {
   const login = useAuthStore((state) => state.login);
@@ -12,7 +13,7 @@ export function LoginPage() {
   const location = useLocation();
   const [email, setEmail] = useState("alex@notey.app");
 
-  const destination = (location.state as { from?: string } | null)?.from ?? "/app";
+  const destination = (location.state as { from?: string } | null)?.from ?? getDefaultAppRoute();
 
   return (
     <Card className="w-full max-w-lg rounded-[36px]">

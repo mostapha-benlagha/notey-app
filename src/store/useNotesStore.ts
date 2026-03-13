@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { createNoteSchema } from "@/schemas/note.schema";
 import { mockNotes } from "@/services/mockData";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTasksStore } from "@/store/useTasksStore";
 import type { Note, NoteAttachment } from "@/types/note.types";
 import { extractTasks, generateTags } from "@/utils/tagGenerator";
@@ -35,6 +36,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   notes: mockNotes,
   searchTerm: "",
   addNote: (input) => {
+    const { aiTaggingEnabled, taskExtractionEnabled } = useSettingsStore.getState();
     const richContent = input.richContent?.trim() || plainTextToHtml(input.content);
     const plainText = summarizeNoteContent(htmlToPlainText(richContent));
 
@@ -50,12 +52,12 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       content: parsed.content,
       richContent: parsed.richContent,
       projectId: parsed.projectId,
-      tags: generateTags(parsed.content),
+      tags: aiTaggingEnabled ? generateTags(parsed.content) : [],
       createdAt: new Date().toISOString(),
       attachments: parsed.attachments,
     };
 
-    const taskTitles = extractTasks(parsed.content);
+    const taskTitles = taskExtractionEnabled ? extractTasks(parsed.content) : [];
     if (taskTitles.length) {
       const addTask = useTasksStore.getState().addTask;
       taskTitles.forEach((title, index) =>
@@ -77,6 +79,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     return note;
   },
   updateNote: (input) => {
+    const { aiTaggingEnabled } = useSettingsStore.getState();
     const plainText = summarizeNoteContent(htmlToPlainText(input.richContent));
     const parsed = createNoteSchema.parse({
       attachments: input.attachments ?? [],
@@ -99,7 +102,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
           content: parsed.content,
           richContent: parsed.richContent,
           projectId: parsed.projectId,
-          tags: generateTags(parsed.content),
+          tags: aiTaggingEnabled ? generateTags(parsed.content) : [],
         };
 
         return updated;

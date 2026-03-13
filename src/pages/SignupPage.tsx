@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/store/useAuthStore";
+import { getDefaultAppRoute } from "@/utils/routes";
 
 export function SignupPage() {
   const signup = useAuthStore((state) => state.signup);
@@ -62,7 +63,7 @@ export function SignupPage() {
           className="w-full rounded-2xl"
           onClick={() => {
             signup(form);
-            navigate("/app", { replace: true });
+            navigate(getDefaultAppRoute(), { replace: true });
           }}
         >
           Create workspace
