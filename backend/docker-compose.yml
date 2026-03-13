@@ -1,0 +1,31 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notey-api
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      CLIENT_URL: http://host.docker.internal:3000
+      MONGODB_URI: mongodb://mongo:27017/notey
+    depends_on:
+      - mongo
+    volumes:
+      - ./src:/app/src
+      - ./tsconfig.json:/app/tsconfig.json
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    container_name: notey-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - notey_mongo_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  notey_mongo_data:
