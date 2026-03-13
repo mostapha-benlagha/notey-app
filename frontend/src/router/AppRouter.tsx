@@ -2,12 +2,14 @@ import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PublicOnlyRoute } from "@/components/auth/PublicOnlyRoute";
+import { OnboardingRoute } from "@/components/auth/OnboardingRoute";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { MainLayout } from "@/layouts/MainLayout";
 import { AccountPage } from "@/pages/AccountPage";
 import { ChatPage } from "@/pages/ChatPage";
 import { LandingPage } from "@/pages/LandingPage";
 import { LoginPage } from "@/pages/LoginPage";
+import { OnboardingPage } from "@/pages/OnboardingPage";
 import { ProjectPage } from "@/pages/ProjectPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { SignupPage } from "@/pages/SignupPage";
@@ -28,6 +30,10 @@ export function AppRouter() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
         </Route>
+      </Route>
+
+      <Route element={<OnboardingRoute />}>
+        <Route path="/onboarding" element={<OnboardingPage />} />
       </Route>
 
       <Route element={<ProtectedRoute />}>

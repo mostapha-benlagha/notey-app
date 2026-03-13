@@ -11,6 +11,7 @@ function serializeProfile(user: NonNullable<Request['user']>) {
     lastName: user.lastName,
     role: user.role,
     plan: user.plan,
+    onboardingCompleted: Boolean(user.onboardingCompleted),
     joinedAt: user.createdAt.toISOString(),
   };
 }

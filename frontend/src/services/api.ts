@@ -57,6 +57,11 @@ interface SettingsResponse {
   settings: Settings;
 }
 
+interface OnboardingResponse {
+  ok: true;
+  onboardingCompleted: boolean;
+}
+
 export async function signup(input: {
   email: string;
   password: string;
@@ -102,6 +107,11 @@ export async function fetchSettings() {
 
 export async function updateSettings(input: Partial<Settings>) {
   const { data } = await apiClient.patch<SettingsResponse>("/settings", input);
+  return data;
+}
+
+export async function completeOnboarding() {
+  const { data } = await apiClient.post<OnboardingResponse>("/onboarding/complete");
   return data;
 }
 

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { deleteProfile, fetchMe, getStoredToken, login, setStoredToken, signup, updateProfile } from "@/services/api";
+import { completeOnboarding, deleteProfile, fetchMe, getStoredToken, login, setStoredToken, signup, updateProfile } from "@/services/api";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import type { User } from "@/types/user.types";
 
@@ -27,6 +27,7 @@ interface AuthState {
   initialize: () => Promise<void>;
   login: (payload: LoginInput) => Promise<void>;
   signup: (payload: SignupInput) => Promise<void>;
+  completeOnboarding: () => Promise<void>;
   logout: () => void;
   updateProfile: (payload: ProfileUpdateInput) => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -74,6 +75,24 @@ export const useAuthStore = create<AuthState>()((set) => ({
       setStoredToken(response.token);
       set({ isAuthenticated: true, user: response.user, isSubmitting: false });
       await useSettingsStore.getState().initialize();
+    } catch (error) {
+      set({ isSubmitting: false });
+      throw error;
+    }
+  },
+  completeOnboarding: async () => {
+    set({ isSubmitting: true });
+    try {
+      await completeOnboarding();
+      set((state) => ({
+        user: state.user
+          ? {
+              ...state.user,
+              onboardingCompleted: true,
+            }
+          : null,
+        isSubmitting: false,
+      }));
     } catch (error) {
       set({ isSubmitting: false });
       throw error;

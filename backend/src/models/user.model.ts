@@ -31,6 +31,10 @@ const userSchema = new Schema(
       type: String,
       default: 'Pro Trial',
     },
+    onboardingCompleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

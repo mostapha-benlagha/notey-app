@@ -12,6 +12,7 @@ function serializeUser(user: {
   lastName: string;
   role: string;
   plan: string;
+  onboardingCompleted: boolean;
   createdAt?: Date;
 }) {
   return {
@@ -21,6 +22,7 @@ function serializeUser(user: {
     lastName: user.lastName,
     role: user.role,
     plan: user.plan,
+    onboardingCompleted: Boolean(user.onboardingCompleted),
     joinedAt: user.createdAt?.toISOString() ?? new Date().toISOString(),
   };
 }
