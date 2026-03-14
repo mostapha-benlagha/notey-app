@@ -13,6 +13,7 @@ At the top level this monorepo contains:
 
 - `backend/` – Express + TypeScript API and MongoDB data layer.
 - `frontend/` – React + TypeScript single‑page app and UI.
+- `desktop/` – Electron wrapper for the existing frontend, used for native desktop behaviors.
 
 Each application has its own `package.json`, scripts, and dependencies, but they are versioned together in this monorepo so tooling and AI agents can understand the full stack in one place.
 
@@ -156,6 +157,14 @@ From the monorepo root:
   - Dev server: `pnpm dev` (Vite on port 3000).
   - Build: `pnpm build`
   - Tests: `pnpm test` or `pnpm test:watch`
+
+- **Desktop**
+  - Install: `cd desktop && pnpm install`
+  - Dev shell: `pnpm dev`
+  - Run against an already-running frontend dev server: `pnpm start`
+  - Package Windows app: `pnpm dist`
+
+The desktop package wraps the existing `frontend/` app instead of duplicating it. In development it opens the Vite app at `http://127.0.0.1:3000/app`; in packaged builds it loads `frontend/dist`. The first native desktop behavior implemented is minimize-to-tray on close, with tray actions to reopen or quit Notey.
 
 Make sure the backend `CLIENT_URL` matches the frontend origin (e.g. `http://127.0.0.1:3000`) so CORS and cookies work correctly in development.
 

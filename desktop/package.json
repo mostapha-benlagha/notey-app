@@ -1,0 +1,41 @@
+{
+  "name": "notey-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Electron desktop wrapper for Notey",
+  "main": "main.cjs",
+  "scripts": {
+    "dev": "concurrently -k \"pnpm --dir ../frontend dev\" \"wait-on tcp:127.0.0.1:3000 && electron .\"",
+    "start": "electron .",
+    "build:web": "pnpm --dir ../frontend build",
+    "dist": "pnpm run build:web && electron-builder",
+    "pack": "pnpm run build:web && electron-builder --dir"
+  },
+  "build": {
+    "appId": "com.notey.desktop",
+    "productName": "Notey",
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../frontend/dist",
+        "to": "frontend-dist"
+      }
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "electron": "^37.3.1",
+    "electron-builder": "^26.0.12",
+    "wait-on": "^8.0.5"
+  }
+}
