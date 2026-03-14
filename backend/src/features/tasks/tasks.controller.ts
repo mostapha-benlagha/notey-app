@@ -1,9 +1,11 @@
 import type { Request, Response } from 'express';
+import type { Types } from 'mongoose';
 import { TaskModel } from '../../models/task.model.js';
 import { TaskStatusModel } from '../../models/task-status.model.js';
 import {
   createExtractedTasksSchema,
   createTaskSchema,
+  moveTaskSchema,
   saveTaskStatusesSchema,
   updateTaskSchema,
 } from '../../schemas/task.schema.js';
@@ -26,12 +28,30 @@ function createHttpError(message: string, statusCode: number) {
   return error;
 }
 
+async function getNextTaskOrder(userId: Types.ObjectId, statusId: string) {
+  const lastTask = await TaskModel.findOne({ userId, statusId }).sort({ order: -1 }).lean();
+  return (lastTask?.order ?? -1) + 1;
+}
+
+async function normalizeTaskOrder(userId: Types.ObjectId, statusId: string) {
+  const tasks = await TaskModel.find({ userId, statusId }).sort({ order: 1, createdAt: 1 });
+  await Promise.all(
+    tasks.map(async (task, index) => {
+      if (task.order === index) {
+        return;
+      }
+
+      task.order = index;
+      await task.save();
+    })
+  );
+}
+
 export async function listTasks(request: Request, response: Response) {
   const user = requireUser(request);
-  const [statuses, tasks] = await Promise.all([
-    ensureTaskStatuses(user._id),
-    TaskModel.find({ userId: user._id }).sort({ createdAt: -1 }).lean(),
-  ]);
+  const statuses = await ensureTaskStatuses(user._id);
+  await Promise.all(statuses.map((status) => normalizeTaskOrder(user._id, status.id)));
+  const tasks = await TaskModel.find({ userId: user._id }).sort({ statusId: 1, order: 1, createdAt: 1 }).lean();
 
   response.json({
     ok: true,
@@ -46,14 +66,18 @@ export async function createTask(request: Request, response: Response) {
   const statuses = await ensureTaskStatuses(user._id);
   const statusIds = new Set(statuses.map((status) => status.id));
   const statusId = statusIds.has(payload.statusId) ? payload.statusId : statuses[0]?.id ?? 'draft';
+  const order = await getNextTaskOrder(user._id, statusId);
 
   const task = await TaskModel.create({
     userId: user._id,
     title: payload.title,
+    description: payload.description,
     statusId,
     projectId: payload.projectId,
     noteId: payload.noteId,
     source: 'manual',
+    tags: payload.tags,
+    order,
   });
 
   response.status(201).json({
@@ -67,15 +91,19 @@ export async function createExtractedTasks(request: Request, response: Response)
   const payload = createExtractedTasksSchema.parse(request.body);
   const statuses = await ensureTaskStatuses(user._id);
   const defaultStatusId = statuses[0]?.id ?? 'draft';
+  const baseOrder = await getNextTaskOrder(user._id, defaultStatusId);
 
   const created = await TaskModel.insertMany(
-    payload.titles.map((title) => ({
+    payload.titles.map((title, index) => ({
       userId: user._id,
       title,
+      description: '',
       statusId: defaultStatusId,
       projectId: payload.projectId,
       noteId: payload.noteId,
       source: 'note_ai' as const,
+      tags: [],
+      order: baseOrder + index,
     }))
   );
 
@@ -93,6 +121,9 @@ export async function updateTask(request: Request, response: Response) {
   if (payload.title !== undefined) {
     update.title = payload.title;
   }
+  if (payload.description !== undefined) {
+    update.description = payload.description;
+  }
   if (payload.statusId !== undefined) {
     update.statusId = payload.statusId;
   }
@@ -101,6 +132,12 @@ export async function updateTask(request: Request, response: Response) {
   }
   if (payload.noteId !== undefined) {
     update.noteId = payload.noteId;
+  }
+  if (payload.tags !== undefined) {
+    update.tags = payload.tags;
+  }
+  if (payload.order !== undefined) {
+    update.order = payload.order;
   }
   if (payload.deletedAt !== undefined) {
     update.deletedAt = payload.deletedAt ? new Date(payload.deletedAt) : null;
@@ -119,6 +156,59 @@ export async function updateTask(request: Request, response: Response) {
   response.json({
     ok: true,
     task: serializeTask(task),
+  });
+}
+
+export async function moveTask(request: Request, response: Response) {
+  const user = requireUser(request);
+  const payload = moveTaskSchema.parse(request.body);
+  const task = await TaskModel.findOne({ _id: request.params.taskId, userId: user._id });
+
+  if (!task) {
+    throw createHttpError('Task not found', 404);
+  }
+
+  const sourceStatusId = task.statusId;
+  const destinationStatusId = payload.statusId;
+  const movingAcrossStatuses = sourceStatusId !== destinationStatusId;
+
+  const destinationTasks = await TaskModel.find({
+    userId: user._id,
+    statusId: destinationStatusId,
+    _id: { $ne: task._id },
+  }).sort({ order: 1, createdAt: 1 });
+
+  const destinationPosition = Math.max(0, Math.min(payload.position, destinationTasks.length));
+
+  if (movingAcrossStatuses) {
+    task.statusId = destinationStatusId;
+  }
+
+  task.order = destinationPosition;
+  await task.save();
+
+  await Promise.all(
+    destinationTasks.map(async (item, index) => {
+      const nextOrder = index >= destinationPosition ? index + 1 : index;
+      if (item.order === nextOrder) {
+        return;
+      }
+
+      item.order = nextOrder;
+      await item.save();
+    })
+  );
+
+  await normalizeTaskOrder(user._id, destinationStatusId);
+  if (movingAcrossStatuses) {
+    await normalizeTaskOrder(user._id, sourceStatusId);
+  }
+
+  const updated = await TaskModel.findOne({ _id: request.params.taskId, userId: user._id });
+
+  response.json({
+    ok: true,
+    task: serializeTask(updated!),
   });
 }
 
@@ -187,7 +277,7 @@ export async function saveTaskStatuses(request: Request, response: Response) {
   );
 
   const statuses = await TaskStatusModel.find({ userId: user._id }).sort({ order: 1 }).lean();
-  const persistedTasks = await TaskModel.find({ userId: user._id }).sort({ createdAt: -1 }).lean();
+  const persistedTasks = await TaskModel.find({ userId: user._id }).sort({ statusId: 1, order: 1, createdAt: 1 }).lean();
 
   response.json({
     ok: true,

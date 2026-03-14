@@ -20,16 +20,18 @@ export function TaskKanbanBoard({
   onTrashTask,
   onCreateStatus,
   onSaveStatuses,
+  onOpenTask,
 }: {
   statuses: TaskStatus[];
   tasks: Task[];
   notes: Note[];
   projects: Project[];
-  onMoveTask: (taskId: string, statusId: string) => Promise<void>;
+  onMoveTask: (taskId: string, statusId: string, position: number) => Promise<void>;
   onToggleDone: (taskId: string) => Promise<void>;
   onTrashTask: (taskId: string) => Promise<void>;
   onCreateStatus: (label: string) => Promise<void>;
   onSaveStatuses: (statuses: TaskStatus[]) => Promise<void>;
+  onOpenTask: (taskId: string) => void;
 }) {
   const [newStatus, setNewStatus] = useState("");
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
@@ -67,7 +69,7 @@ export function TaskKanbanBoard({
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={() => {
                   if (draggedTaskId) {
-                    void onMoveTask(draggedTaskId, status.id);
+                    void onMoveTask(draggedTaskId, status.id, columnTasks.length);
                   }
                   setDraggedTaskId(null);
                 }}
@@ -82,19 +84,34 @@ export function TaskKanbanBoard({
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {columnTasks.length ? (
-                    columnTasks.map((task) => {
+                    columnTasks.map((task, index) => {
                       const project = projects.find((item) => item.id === task.projectId);
                       const note = notes.find((item) => item.id === task.noteId);
                       return (
-                        <div key={task.id} onDragStart={() => setDraggedTaskId(task.id)} onDragEnd={() => setDraggedTaskId(null)}>
-                          <KanbanTaskCard
-                            task={task}
-                            project={project}
-                            notePreview={note?.content.slice(0, 64)}
-                            status={status}
-                            onToggleDone={() => void onToggleDone(task.id)}
-                            onTrash={() => void onTrashTask(task.id)}
+                        <div key={task.id} className="space-y-2">
+                          <button
+                            type="button"
+                            aria-label={`Move into ${status.label} position ${index + 1}`}
+                            className="h-2 w-full rounded-full bg-transparent transition hover:bg-primary/10"
+                            onDragOver={(event) => event.preventDefault()}
+                            onDrop={() => {
+                              if (draggedTaskId) {
+                                void onMoveTask(draggedTaskId, status.id, index);
+                              }
+                              setDraggedTaskId(null);
+                            }}
                           />
+                          <div onDragStart={() => setDraggedTaskId(task.id)} onDragEnd={() => setDraggedTaskId(null)}>
+                            <KanbanTaskCard
+                              task={task}
+                              project={project}
+                              notePreview={note?.content.slice(0, 64)}
+                              status={status}
+                              onOpen={() => onOpenTask(task.id)}
+                              onToggleDone={() => void onToggleDone(task.id)}
+                              onTrash={() => void onTrashTask(task.id)}
+                            />
+                          </div>
                         </div>
                       );
                     })

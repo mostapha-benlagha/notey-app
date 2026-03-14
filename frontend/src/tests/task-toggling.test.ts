@@ -10,16 +10,19 @@ describe("useTasksStore", () => {
       tasks: [...mockTasks],
     });
 
-    const patchSpy = jest.spyOn(apiClient, "patch").mockResolvedValue({
+    const postSpy = jest.spyOn(apiClient, "post").mockResolvedValue({
       data: {
         ok: true,
         task: {
           id: "task1",
           title: "Prepare slides for security meeting",
+          description: "Pull the latest deck, tighten the security overview, and keep the executive summary short.",
           statusId: "done",
           projectId: "work",
           noteId: "note1",
           source: "note_ai",
+          tags: ["meeting", "security"],
+          order: 0,
           deletedAt: null,
         },
       },
@@ -36,7 +39,7 @@ describe("useTasksStore", () => {
       await useTasksStore.getState().toggleTask(taskId);
       expect(useTasksStore.getState().tasks.find((task) => task.id === taskId)?.statusId).toBe("done");
     } finally {
-      patchSpy.mockRestore();
+      postSpy.mockRestore();
     }
   });
 });

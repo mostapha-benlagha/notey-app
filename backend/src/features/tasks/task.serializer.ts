@@ -8,10 +8,13 @@ export function serializeTask(task: SerializableTask) {
   return {
     id: task._id.toString(),
     title: task.title,
+    description: task.description ?? '',
     statusId: task.statusId,
     projectId: task.projectId,
     noteId: task.noteId ?? null,
-    source: task.source,
+    source: task.source ?? 'manual',
+    tags: Array.isArray(task.tags) ? task.tags : [],
+    order: typeof task.order === 'number' ? task.order : 0,
     deletedAt: task.deletedAt ? task.deletedAt.toISOString() : null,
   };
 }

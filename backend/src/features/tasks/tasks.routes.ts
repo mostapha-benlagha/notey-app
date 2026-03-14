@@ -7,6 +7,7 @@ import {
   deleteTask,
   emptyTrash,
   listTasks,
+  moveTask,
   saveTaskStatuses,
   updateTask,
 } from './tasks.controller.js';
@@ -19,5 +20,6 @@ tasksRouter.post('/', asyncHandler(createTask));
 tasksRouter.post('/extracted', asyncHandler(createExtractedTasks));
 tasksRouter.put('/statuses', asyncHandler(saveTaskStatuses));
 tasksRouter.delete('/trash', asyncHandler(emptyTrash));
+tasksRouter.post('/:taskId/move', asyncHandler(moveTask));
 tasksRouter.patch('/:taskId', asyncHandler(updateTask));
 tasksRouter.delete('/:taskId', asyncHandler(deleteTask));

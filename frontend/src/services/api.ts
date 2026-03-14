@@ -222,9 +222,11 @@ export async function fetchTasks() {
 
 export async function createTask(input: {
   title: string;
+  description?: string;
   projectId: string;
   noteId: string | null;
   statusId: string;
+  tags?: string[];
 }) {
   const { data } = await apiClient.post<TaskResponse>("/tasks", input);
   return taskSchema.parse(data.task);
@@ -242,13 +244,26 @@ export async function createExtractedTasks(input: {
 export async function updateTask(input: {
   id: string;
   title?: string;
+  description?: string;
   projectId?: string;
   noteId?: string | null;
   statusId?: string;
+  tags?: string[];
+  order?: number;
   deletedAt?: string | null;
 }) {
   const { id, ...payload } = input;
   const { data } = await apiClient.patch<TaskResponse>(`/tasks/${id}`, payload);
+  return taskSchema.parse(data.task);
+}
+
+export async function moveTask(input: {
+  id: string;
+  statusId: string;
+  position: number;
+}) {
+  const { id, ...payload } = input;
+  const { data } = await apiClient.post<TaskResponse>(`/tasks/${id}/move`, payload);
   return taskSchema.parse(data.task);
 }
 

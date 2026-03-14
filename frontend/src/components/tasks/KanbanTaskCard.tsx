@@ -15,6 +15,7 @@ export function KanbanTaskCard({
   onTrash,
   onRestore,
   onPermanentDelete,
+  onOpen,
 }: {
   task: Task;
   project?: Project;
@@ -25,11 +26,13 @@ export function KanbanTaskCard({
   onTrash?: () => void;
   onRestore?: () => void;
   onPermanentDelete?: () => void;
+  onOpen?: () => void;
 }) {
   return (
     <Card
       draggable={draggable}
       className="rounded-[28px] border-white/85 bg-white/95 p-4 transition hover:-translate-y-0.5"
+      onClick={onOpen}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
@@ -41,6 +44,7 @@ export function KanbanTaskCard({
               {task.source === "note_ai" ? "AI" : "Manual"}
             </Badge>
           </div>
+          {task.description ? <p className="mt-3 text-sm leading-7 text-foreground/75">{task.description}</p> : null}
           <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
             {project ? (
               <span className="inline-flex items-center gap-1">
@@ -55,25 +59,66 @@ export function KanbanTaskCard({
               </span>
             ) : null}
           </div>
+          {!!task.tags.length && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {task.tags.map((tag) => (
+                <Badge key={tag} variant="outline" className="rounded-full">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
         <div className="flex gap-1">
           {onToggleDone ? (
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={onToggleDone}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleDone();
+              }}
+            >
               <CheckCircle2 className="h-4 w-4" />
             </Button>
           ) : null}
           {onTrash ? (
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-rose-600 hover:bg-rose-50" onClick={onTrash}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full text-rose-600 hover:bg-rose-50"
+              onClick={(event) => {
+                event.stopPropagation();
+                onTrash();
+              }}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           ) : null}
           {onRestore ? (
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={onRestore}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+              onClick={(event) => {
+                event.stopPropagation();
+                onRestore();
+              }}
+            >
               <RotateCcw className="h-4 w-4" />
             </Button>
           ) : null}
           {onPermanentDelete ? (
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-rose-600 hover:bg-rose-50" onClick={onPermanentDelete}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full text-rose-600 hover:bg-rose-50"
+              onClick={(event) => {
+                event.stopPropagation();
+                onPermanentDelete();
+              }}
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           ) : null}

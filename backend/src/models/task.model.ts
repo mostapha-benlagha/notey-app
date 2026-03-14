@@ -13,6 +13,11 @@ const taskSchema = new Schema(
       required: true,
       trim: true,
     },
+    description: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     statusId: {
       type: String,
       required: true,
@@ -33,6 +38,16 @@ const taskSchema = new Schema(
       enum: ['manual', 'note_ai'],
       required: true,
       default: 'manual',
+    },
+    tags: {
+      type: [String],
+      default: [],
+    },
+    order: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
     },
     deletedAt: {
       type: Date,

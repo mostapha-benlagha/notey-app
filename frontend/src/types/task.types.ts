@@ -11,9 +11,12 @@ export interface TaskStatus {
 export interface Task {
   id: string;
   title: string;
+  description: string;
   statusId: TaskStatusId;
   projectId: string;
   noteId: string | null;
   source: TaskSource;
+  tags: string[];
+  order: number;
   deletedAt: string | null;
 }

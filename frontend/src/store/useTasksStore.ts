@@ -5,6 +5,7 @@ import {
   deleteTask as deleteTaskRequest,
   emptyTaskTrash,
   fetchTasks,
+  moveTask as moveTaskRequest,
   saveTaskStatuses as saveTaskStatusesRequest,
   updateTask as updateTaskRequest,
 } from "@/services/api";
@@ -12,9 +13,11 @@ import type { Task, TaskStatus } from "@/types/task.types";
 
 interface CreateManualTaskInput {
   title: string;
+  description?: string;
   projectId: string;
   noteId: string | null;
   statusId?: string;
+  tags?: string[];
 }
 
 interface TasksState {
@@ -28,7 +31,16 @@ interface TasksState {
   handleNoteDeleted: (noteId: string) => void;
   createStatus: (label: string, colorClass?: string) => Promise<TaskStatus | null>;
   saveStatuses: (statuses: TaskStatus[]) => Promise<void>;
-  moveTask: (taskId: string, statusId: string) => Promise<void>;
+  moveTask: (taskId: string, statusId: string, position: number) => Promise<void>;
+  updateTaskDetails: (input: {
+    id: string;
+    title: string;
+    description: string;
+    projectId: string;
+    noteId: string | null;
+    statusId: string;
+    tags: string[];
+  }) => Promise<void>;
   toggleTask: (taskId: string) => Promise<void>;
   trashTask: (taskId: string) => Promise<void>;
   restoreTask: (taskId: string) => Promise<void>;
@@ -48,9 +60,9 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     try {
       const { statuses, tasks } = await fetchTasks();
       set({ isLoading: false, statuses, tasks });
-    } catch {
+    } catch (error) {
+      console.error("Failed to initialize tasks", error);
       set({ isLoading: false, statuses: [], tasks: [] });
-      throw new Error("Unable to load tasks");
     }
   },
   clear: () =>
@@ -63,13 +75,15 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     const defaultStatusId = input.statusId ?? get().statuses[0]?.id ?? "draft";
     const task = await createTaskRequest({
       title: input.title,
+      description: input.description ?? "",
       projectId: input.projectId,
       noteId: input.noteId,
       statusId: defaultStatusId,
+      tags: input.tags ?? [],
     });
 
     set((state) => ({
-      tasks: [task, ...state.tasks.filter((existing) => existing.id !== task.id)],
+      tasks: [...state.tasks.filter((existing) => existing.id !== task.id), task],
     }));
 
     return task;
@@ -83,7 +97,7 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     const tasks = await createExtractedTasksRequest(input);
 
     set((state) => ({
-      tasks: [...tasks, ...state.tasks.filter((existing) => !tasks.some((task) => task.id === existing.id))],
+      tasks: [...state.tasks.filter((existing) => !tasks.some((task) => task.id === existing.id)), ...tasks],
     }));
 
     return tasks;
@@ -120,15 +134,29 @@ export const useTasksStore = create<TasksState>((set, get) => ({
     const response = await saveTaskStatusesRequest(statuses);
     set({ statuses: response.statuses, tasks: response.tasks });
   },
-  moveTask: async (taskId, statusId) => {
+  moveTask: async (taskId, statusId, position) => {
     const currentTask = get().tasks.find((task) => task.id === taskId);
-    if (!currentTask || currentTask.statusId === statusId) {
+    if (!currentTask) {
       return;
     }
 
-    const updated = await updateTaskRequest({ id: taskId, statusId });
+    const updated = await moveTaskRequest({ id: taskId, statusId, position });
     set((state) => ({
-      tasks: state.tasks.map((task) => (task.id === taskId ? updated : task)),
+      tasks: state.tasks
+        .map((task) => (task.id === taskId ? updated : task))
+        .sort((left, right) => {
+          if (left.statusId === right.statusId) {
+            return left.order - right.order;
+          }
+
+          return left.statusId.localeCompare(right.statusId);
+        }),
+    }));
+  },
+  updateTaskDetails: async (input) => {
+    const updated = await updateTaskRequest(input);
+    set((state) => ({
+      tasks: state.tasks.map((task) => (task.id === input.id ? updated : task)),
     }));
   },
   toggleTask: async (taskId) => {
@@ -137,13 +165,24 @@ export const useTasksStore = create<TasksState>((set, get) => ({
       return;
     }
 
-    const updated = await updateTaskRequest({
+    const nextStatusId = currentTask.statusId === "done" ? get().statuses[0]?.id ?? "draft" : "done";
+    const nextPosition = get().tasks.filter((task) => task.statusId === nextStatusId && !task.deletedAt && task.id !== taskId).length;
+    const updated = await moveTaskRequest({
       id: taskId,
-      statusId: currentTask.statusId === "done" ? get().statuses[0]?.id ?? "draft" : "done",
+      statusId: nextStatusId,
+      position: nextPosition,
     });
 
     set((state) => ({
-      tasks: state.tasks.map((task) => (task.id === taskId ? updated : task)),
+      tasks: state.tasks
+        .map((task) => (task.id === taskId ? updated : task))
+        .sort((left, right) => {
+          if (left.statusId === right.statusId) {
+            return left.order - right.order;
+          }
+
+          return left.statusId.localeCompare(right.statusId);
+        }),
     }));
   },
   trashTask: async (taskId) => {

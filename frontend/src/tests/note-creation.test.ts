@@ -34,10 +34,13 @@ describe("useNotesStore", () => {
               {
                 id: "task-created-from-test",
                 title: "Send follow up email after the meeting",
+                description: "",
                 statusId: "draft",
                 projectId: "startup",
                 noteId: "note-created-from-test",
                 source: "note_ai",
+                tags: [],
+                order: 0,
                 deletedAt: null,
               },
             ],
