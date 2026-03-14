@@ -9,12 +9,13 @@ import type { User } from "@/types/user.types";
 import type { Settings } from "@/types/settings.types";
 
 const AUTH_TOKEN_KEY = "notey-access-token";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const apiClient = axios.create({
-  baseURL: "/api",
+  baseURL: API_BASE_URL,
   timeout: 5000,
 });
-
+  
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem(AUTH_TOKEN_KEY);
 
