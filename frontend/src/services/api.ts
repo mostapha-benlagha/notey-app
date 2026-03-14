@@ -3,6 +3,7 @@ import { noteSchema } from "@/schemas/note.schema";
 import { projectSchema } from "@/schemas/project.schema";
 import { taskSchema } from "@/schemas/task.schema";
 import { mockNotes, mockProjects, mockTasks } from "@/services/mockData";
+import type { Note, NoteAttachment } from "@/types/note.types";
 import type { User } from "@/types/user.types";
 import type { Settings } from "@/types/settings.types";
 
@@ -62,6 +63,21 @@ interface OnboardingResponse {
   onboardingCompleted: boolean;
 }
 
+interface NotesResponse {
+  ok: true;
+  notes: Note[];
+}
+
+interface NoteResponse {
+  ok: true;
+  note: Note;
+}
+
+interface UploadAttachmentsResponse {
+  ok: true;
+  attachments: NoteAttachment[];
+}
+
 export async function signup(input: {
   email: string;
   password: string;
@@ -116,7 +132,63 @@ export async function completeOnboarding() {
 }
 
 export async function fetchNotes() {
-  return Promise.resolve(mockNotes.map((note) => noteSchema.parse(note)));
+  const { data } = await apiClient.get<NotesResponse>("/notes");
+  return data.notes.map((note) => noteSchema.parse(note));
+}
+
+export async function createNote(input: {
+  content: string;
+  richContent: string;
+  projectId: string;
+  tags: string[];
+  attachments: NoteAttachment[];
+}) {
+  const { data } = await apiClient.post<NoteResponse>("/notes", input);
+  return noteSchema.parse(data.note);
+}
+
+export async function updateNote(input: {
+  id: string;
+  content: string;
+  richContent: string;
+  projectId: string;
+  tags: string[];
+  attachments: NoteAttachment[];
+}) {
+  const { id, ...payload } = input;
+  const { data } = await apiClient.patch<NoteResponse>(`/notes/${id}`, payload);
+  return noteSchema.parse(data.note);
+}
+
+export async function deleteNote(noteId: string) {
+  await apiClient.delete(`/notes/${noteId}`);
+}
+
+export async function uploadNoteAttachments(attachments: NoteAttachment[]) {
+  const existingAttachments = attachments
+    .filter((attachment) => !attachment.file)
+    .map(({ file, ...attachment }) => attachment);
+  const files = attachments
+    .map((attachment) => attachment.file)
+    .filter((file): file is File => !!file);
+
+  if (!files.length) {
+    return existingAttachments;
+  }
+
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append("files", file);
+  });
+
+  const { data } = await apiClient.post<UploadAttachmentsResponse>("/notes/attachments/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  const uploadedAttachments = data.attachments.map((attachment) => noteSchema.shape.attachments.element.parse(attachment));
+  return [...existingAttachments, ...uploadedAttachments];
 }
 
 export async function fetchProjects() {

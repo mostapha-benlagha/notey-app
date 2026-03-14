@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createNoteSchema } from "@/schemas/note.schema";
-import { mockNotes } from "@/services/mockData";
+import { createNote as createNoteRequest, deleteNote as deleteNoteRequest, fetchNotes, updateNote as updateNoteRequest } from "@/services/api";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTasksStore } from "@/store/useTasksStore";
 import type { Note, NoteAttachment } from "@/types/note.types";
@@ -23,19 +23,40 @@ interface UpdateNoteInput {
 
 interface NotesState {
   notes: Note[];
+  isLoading: boolean;
   searchTerm: string;
-  addNote: (input: AddNoteInput) => Note;
-  updateNote: (input: UpdateNoteInput) => Note | null;
-  deleteNote: (noteId: string) => void;
+  initialize: () => Promise<void>;
+  clear: () => void;
+  addNote: (input: AddNoteInput) => Promise<Note>;
+  updateNote: (input: UpdateNoteInput) => Promise<Note | null>;
+  deleteNote: (noteId: string) => Promise<void>;
   getNoteById: (noteId: string) => Note | undefined;
   filterByProject: (projectId?: string | null) => Note[];
   setSearchTerm: (term: string) => void;
 }
 
 export const useNotesStore = create<NotesState>((set, get) => ({
-  notes: mockNotes,
+  notes: [],
+  isLoading: false,
   searchTerm: "",
-  addNote: (input) => {
+  initialize: async () => {
+    set({ isLoading: true });
+
+    try {
+      const notes = await fetchNotes();
+      set({ isLoading: false, notes });
+    } catch {
+      set({ isLoading: false, notes: [] });
+      throw new Error("Unable to load notes");
+    }
+  },
+  clear: () =>
+    set({
+      isLoading: false,
+      notes: [],
+      searchTerm: "",
+    }),
+  addNote: async (input) => {
     const { aiTaggingEnabled, taskExtractionEnabled } = useSettingsStore.getState();
     const richContent = input.richContent?.trim() || plainTextToHtml(input.content);
     const plainText = summarizeNoteContent(htmlToPlainText(richContent));
@@ -47,15 +68,14 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       projectId: input.projectId,
     });
 
-    const note: Note = {
-      id: `note-${Date.now()}`,
-      content: parsed.content,
-      richContent: parsed.richContent,
-      projectId: parsed.projectId,
-      tags: aiTaggingEnabled ? generateTags(parsed.content) : [],
-      createdAt: new Date().toISOString(),
+    const tags = aiTaggingEnabled ? generateTags(parsed.content) : [];
+    const note = await createNoteRequest({
       attachments: parsed.attachments,
-    };
+      content: parsed.content,
+      projectId: parsed.projectId,
+      richContent: parsed.richContent,
+      tags,
+    });
 
     const taskTitles = taskExtractionEnabled ? extractTasks(parsed.content) : [];
     if (taskTitles.length) {
@@ -73,12 +93,12 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     }
 
     set((state) => ({
-      notes: [note, ...state.notes],
+      notes: [note, ...state.notes.filter((existing) => existing.id !== note.id)],
     }));
 
     return note;
   },
-  updateNote: (input) => {
+  updateNote: async (input) => {
     const { aiTaggingEnabled } = useSettingsStore.getState();
     const plainText = summarizeNoteContent(htmlToPlainText(input.richContent));
     const parsed = createNoteSchema.parse({
@@ -88,33 +108,34 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       projectId: input.projectId,
     });
 
-    let updated: Note | null = null;
+    const existing = get().notes.find((note) => note.id === input.id);
+    if (!existing) {
+      return null;
+    }
+
+    const updated = await updateNoteRequest({
+      attachments: parsed.attachments,
+      content: parsed.content,
+      id: input.id,
+      projectId: parsed.projectId,
+      richContent: parsed.richContent,
+      tags: aiTaggingEnabled ? generateTags(parsed.content) : [],
+    });
 
     set((state) => ({
-      notes: state.notes.map((note) => {
-        if (note.id !== input.id) {
-          return note;
-        }
-
-        updated = {
-          ...note,
-          attachments: parsed.attachments,
-          content: parsed.content,
-          richContent: parsed.richContent,
-          projectId: parsed.projectId,
-          tags: aiTaggingEnabled ? generateTags(parsed.content) : [],
-        };
-
-        return updated;
-      }),
+      notes: state.notes.map((note) => (note.id === input.id ? updated : note)),
     }));
 
     return updated;
   },
-  deleteNote: (noteId) =>
+  deleteNote: async (noteId) => {
+    await deleteNoteRequest(noteId);
+    useTasksStore.getState().removeTasksByNote(noteId);
+
     set((state) => ({
       notes: state.notes.filter((note) => note.id !== noteId),
-    })),
+    }));
+  },
   getNoteById: (noteId) => get().notes.find((note) => note.id === noteId),
   filterByProject: (projectId) =>
     get().notes.filter((note) => !projectId || note.projectId === projectId),

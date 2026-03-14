@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { completeOnboarding, deleteProfile, fetchMe, getStoredToken, login, setStoredToken, signup, updateProfile } from "@/services/api";
+import { useNotesStore } from "@/store/useNotesStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import type { User } from "@/types/user.types";
 
@@ -42,6 +43,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     const token = getStoredToken();
 
     if (!token) {
+      useNotesStore.getState().clear();
       set({ isAuthenticated: false, user: null, isHydrating: false });
       return;
     }
@@ -52,6 +54,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
       await useSettingsStore.getState().initialize();
     } catch {
       setStoredToken(null);
+      useNotesStore.getState().clear();
       useSettingsStore.getState().clear();
       set({ isAuthenticated: false, user: null, isHydrating: false });
     }
@@ -100,6 +103,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
   },
   logout: () => {
     setStoredToken(null);
+    useNotesStore.getState().clear();
     useSettingsStore.getState().clear();
     set({ isAuthenticated: false, user: null, isHydrating: false, isSubmitting: false });
   },
@@ -118,6 +122,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     try {
       await deleteProfile();
       setStoredToken(null);
+      useNotesStore.getState().clear();
       useSettingsStore.getState().clear();
       set({ isAuthenticated: false, user: null, isHydrating: false, isSubmitting: false });
     } catch (error) {

@@ -5,6 +5,9 @@ export const noteAttachmentSchema = z.object({
   name: z.string().min(1),
   kind: z.enum(["image", "file"]),
   sizeLabel: z.string().min(1),
+  objectKey: z.string().min(1).optional(),
+  url: z.string().min(1).optional(),
+  mimeType: z.string().min(1).optional(),
 });
 
 export const noteSchema = z.object({

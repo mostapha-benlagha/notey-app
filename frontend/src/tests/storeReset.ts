@@ -15,6 +15,7 @@ export function resetAllStores() {
   });
 
   useNotesStore.setState({
+    isLoading: false,
     notes: [...mockNotes],
     searchTerm: "",
   });

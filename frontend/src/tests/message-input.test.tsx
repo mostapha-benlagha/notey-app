@@ -2,11 +2,16 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { MessageInput } from "@/components/chat/MessageInput";
+import { uploadNoteAttachments } from "@/services/api";
+
+jest.mock("@/services/api", () => ({
+  uploadNoteAttachments: jest.fn(async (attachments) => attachments),
+}));
 
 describe("MessageInput", () => {
   it("submits note content with the selected project", async () => {
     const user = userEvent.setup();
-    const onSubmit = jest.fn();
+    const onSubmit = jest.fn(async () => {});
 
     render(
       <MemoryRouter>
@@ -23,5 +28,6 @@ describe("MessageInput", () => {
       content: "Draft the customer handoff note",
       projectId: "startup",
     });
+    expect(uploadNoteAttachments).toHaveBeenCalledWith([]);
   });
 });

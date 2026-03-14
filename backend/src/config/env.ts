@@ -3,6 +3,10 @@ import { z } from 'zod';
 
 config();
 
+const booleanFromEnv = z
+  .union([z.boolean(), z.enum(['true', 'false'])])
+  .transform((value) => (typeof value === 'boolean' ? value : value === 'true'));
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
@@ -10,6 +14,12 @@ const envSchema = z.object({
   MONGODB_URI: z.string().min(1).optional(),
   JWT_SECRET: z.string().min(16).default('dev-secret-change-me'),
   JWT_EXPIRES_IN: z.string().default('7d'),
+  MINIO_ENDPOINT: z.string().min(1).default('127.0.0.1'),
+  MINIO_PORT: z.coerce.number().int().positive().default(9000),
+  MINIO_USE_SSL: booleanFromEnv.default(false),
+  MINIO_ACCESS_KEY: z.string().min(1).default('notey'),
+  MINIO_SECRET_KEY: z.string().min(8).default('noteysecret'),
+  MINIO_BUCKET: z.string().min(1).default('notey-files'),
 });
 
 const parsed = envSchema.safeParse(process.env);

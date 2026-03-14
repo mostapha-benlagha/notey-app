@@ -6,6 +6,7 @@ import { RichNoteEditor } from "@/components/notes/RichNoteEditor";
 import { ProjectSelector } from "@/components/projects/ProjectSelector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { uploadNoteAttachments } from "@/services/api";
 import { useNotesStore } from "@/store/useNotesStore";
 import type { NoteAttachment } from "@/types/note.types";
 import { toAttachment } from "@/utils/attachments";
@@ -44,6 +45,7 @@ export function NoteEditorPage() {
   const [projectId, setProjectId] = useState(initialProjectId);
   const [attachments, setAttachments] = useState<NoteAttachment[]>(initialAttachments);
   const [content, setContent] = useState(initialHtml);
+  const [isSaving, setIsSaving] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -61,29 +63,41 @@ export function NoteEditorPage() {
     setAttachments((current) => [...current, ...Array.from(files).map(toAttachment)]);
   };
 
-  const handleSave = () => {
-    if (isNew) {
-      const note = addNote({
-        attachments,
-        content: draftState?.content?.trim() || "Untitled note",
+  const handleSave = async () => {
+    if (isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const uploadedAttachments = await uploadNoteAttachments(attachments);
+
+      if (isNew) {
+        const note = await addNote({
+          attachments: uploadedAttachments,
+          content: draftState?.content?.trim() || "Untitled note",
+          projectId,
+          richContent: content,
+        });
+        navigate(returnTo, { replace: false, state: { focusNoteId: note.id } });
+        return;
+      }
+
+      if (!id) {
+        return;
+      }
+
+      await updateNote({
+        attachments: uploadedAttachments,
+        id,
         projectId,
         richContent: content,
       });
-      navigate(returnTo, { replace: false, state: { focusNoteId: note.id } });
-      return;
+      navigate(returnTo, { replace: false, state: { focusNoteId: id } });
+    } finally {
+      setIsSaving(false);
     }
-
-    if (!id) {
-      return;
-    }
-
-    updateNote({
-      attachments,
-      id,
-      projectId,
-      richContent: content,
-    });
-    navigate(returnTo, { replace: false, state: { focusNoteId: id } });
   };
 
   if (!isNew && !existingNote) {
@@ -108,9 +122,9 @@ export function NoteEditorPage() {
               Back
             </Link>
           </Button>
-          <Button className="rounded-2xl" onClick={handleSave}>
+          <Button className="rounded-2xl" onClick={() => void handleSave()} disabled={isSaving}>
             <Save className="h-4 w-4" />
-            Save note
+            {isSaving ? "Saving..." : "Save note"}
           </Button>
         </div>
       </CardHeader>

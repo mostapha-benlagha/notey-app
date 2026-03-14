@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { accountRouter } from '../features/account/account.routes.js';
 import { authRouter } from '../features/auth/auth.routes.js';
+import { notesRouter } from '../features/notes/notes.routes.js';
 import { onboardingRouter } from '../features/onboarding/onboarding.routes.js';
 import { settingsRouter } from '../features/settings/settings.routes.js';
 import { healthRouter } from './health.js';
@@ -19,3 +20,4 @@ apiRouter.use('/auth', authRouter);
 apiRouter.use('/account', accountRouter);
 apiRouter.use('/onboarding', onboardingRouter);
 apiRouter.use('/settings', settingsRouter);
+apiRouter.use('/notes', notesRouter);

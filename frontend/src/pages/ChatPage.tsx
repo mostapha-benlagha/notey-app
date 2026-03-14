@@ -12,6 +12,7 @@ export function ChatPage() {
   const projects = useProjectsStore((state) => state.projects);
   const addNote = useNotesStore((state) => state.addNote);
   const deleteNote = useNotesStore((state) => state.deleteNote);
+  const isLoading = useNotesStore((state) => state.isLoading);
   const setSearchTerm = useNotesStore((state) => state.setSearchTerm);
   const { filteredNotes, searchTerm } = useNotes();
 
@@ -28,16 +29,26 @@ export function ChatPage() {
           </div>
         </CardHeader>
         <CardContent className="min-h-0 flex-1">
-          <ChatContainer
-            notes={filteredNotes}
-            projects={projects}
-            onDeleteNote={deleteNote}
-            onOpenNote={(noteId) => navigate(`/app/notes/${noteId}`, { state: { returnTo: "/app" } })}
-          />
+          {isLoading ? (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading notes...</div>
+          ) : (
+            <ChatContainer
+              notes={filteredNotes}
+              projects={projects}
+              onDeleteNote={(noteId) => {
+                void deleteNote(noteId);
+              }}
+              onOpenNote={(noteId) => navigate(`/app/notes/${noteId}`, { state: { returnTo: "/app" } })}
+            />
+          )}
         </CardContent>
       </Card>
       <div className="shrink-0">
-        <MessageInput onSubmit={addNote} />
+        <MessageInput
+          onSubmit={async (payload) => {
+            await addNote(payload);
+          }}
+        />
       </div>
     </div>
   );

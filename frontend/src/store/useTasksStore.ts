@@ -6,6 +6,7 @@ interface TasksState {
   statuses: TaskStatus[];
   tasks: Task[];
   addTask: (task: Task) => void;
+  removeTasksByNote: (noteId: string) => void;
   createStatus: (label: string, colorClass?: string) => TaskStatus | null;
   saveStatuses: (statuses: TaskStatus[]) => void;
   moveTask: (taskId: string, statusId: string) => void;
@@ -24,6 +25,10 @@ export const useTasksStore = create<TasksState>((set, get) => ({
   addTask: (task) =>
     set((state) => ({
       tasks: [task, ...state.tasks],
+    })),
+  removeTasksByNote: (noteId) =>
+    set((state) => ({
+      tasks: state.tasks.filter((task) => task.noteId !== noteId),
     })),
   createStatus: (label, colorClass = "bg-violet-100 text-violet-700") => {
     const normalized = label.trim();

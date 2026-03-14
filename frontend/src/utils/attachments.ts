@@ -8,7 +8,9 @@ export function toAttachment(file: File): NoteAttachment {
 
   return {
     id: `attachment-${file.name}-${file.lastModified}`,
+    file,
     kind,
+    mimeType: file.type || undefined,
     name: file.name,
     sizeLabel,
   };

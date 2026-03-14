@@ -8,6 +8,7 @@ Base backend scaffold for the Notey application.
 - Express
 - TypeScript
 - MongoDB via Mongoose
+- MinIO for object storage
 
 ## Scripts
 
@@ -15,12 +16,12 @@ Base backend scaffold for the Notey application.
 - `npm run build` compiles the API to `dist`
 - `npm run start` runs the compiled API
 - `npm run typecheck` runs TypeScript without emitting files
-- `npm run docker:up` starts the backend and MongoDB with Docker Compose
+- `npm run docker:up` starts the backend, MongoDB, and MinIO with Docker Compose
 - `npm run docker:down` stops the Docker Compose stack and removes volumes
 
 ## Environment
 
-Copy `.env.example` to `.env` and update the values before connecting MongoDB.
+Copy `.env.example` to `.env` and update the values before connecting MongoDB and MinIO.
 
 ## Docker
 
@@ -28,5 +29,11 @@ Docker Compose starts:
 
 - `api` for the Express backend
 - `mongo` for MongoDB
+- `minio` for S3-compatible file storage
 
-Inside Docker, the backend connects to MongoDB using `mongodb://mongo:27017/notey`.
+Inside Docker, the backend connects to:
+
+- MongoDB using `mongodb://mongo:27017/notey`
+- MinIO using `http://minio:9000`
+
+Uploaded note attachments are stored in MinIO rather than on the API filesystem.

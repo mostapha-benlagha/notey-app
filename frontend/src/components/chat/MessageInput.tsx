@@ -7,17 +7,19 @@ import { Textarea } from "@/components/ui/textarea";
 import type { NoteAttachment } from "@/types/note.types";
 import { AttachmentPreview } from "@/components/chat/AttachmentPreview";
 import { ProjectSelector } from "@/components/projects/ProjectSelector";
+import { uploadNoteAttachments } from "@/services/api";
 import { toAttachment } from "@/utils/attachments";
 
 export function MessageInput({
   onSubmit,
 }: {
-  onSubmit: (payload: { content: string; projectId: string; attachments: NoteAttachment[] }) => void;
+  onSubmit: (payload: { content: string; projectId: string; attachments: NoteAttachment[] }) => Promise<void>;
 }) {
   const navigate = useNavigate();
   const [content, setContent] = useState("");
   const [projectId, setProjectId] = useState("work");
   const [attachments, setAttachments] = useState<NoteAttachment[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,18 +42,25 @@ export function MessageInput({
     });
   };
 
-  const submit = () => {
-    if (!content.trim()) {
+  const submit = async () => {
+    if (!content.trim() || isSubmitting) {
       return;
     }
 
-    onSubmit({
-      content,
-      projectId,
-      attachments,
-    });
-    setContent("");
-    setAttachments([]);
+    setIsSubmitting(true);
+
+    try {
+      const uploadedAttachments = await uploadNoteAttachments(attachments);
+      await onSubmit({
+        content,
+        projectId,
+        attachments: uploadedAttachments,
+      });
+      setContent("");
+      setAttachments([]);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -88,9 +97,9 @@ export function MessageInput({
               </Button>
             </div>
           </div>
-          <Button type="button" onClick={submit}>
+          <Button type="button" onClick={() => void submit()} disabled={isSubmitting}>
             <SendHorizontal className="h-4 w-4" />
-            Save note
+            {isSubmitting ? "Saving..." : "Save note"}
           </Button>
         </div>
       </div>

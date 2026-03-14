@@ -5,6 +5,10 @@ export interface NoteAttachment {
   name: string;
   kind: AttachmentKind;
   sizeLabel: string;
+  objectKey?: string;
+  url?: string;
+  mimeType?: string;
+  file?: File;
 }
 
 export interface Note {
