@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bot, Link2, NotebookTabs, Sparkles, SquarePen } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +50,7 @@ export function TaskDetailsDialog({
   const [statusId, setStatusId] = useState("");
   const [tagsText, setTagsText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     if (!task) {
@@ -152,7 +154,25 @@ export function TaskDetailsDialog({
                   <Link2 className="mt-1 h-4 w-4 text-primary" />
                   <div>
                     <p className="font-medium text-foreground">Linked note</p>
-                    <p>{linkedNote ? linkedNote.content.slice(0, 96) : "This task is currently standalone."}</p>
+                    {linkedNote ? (
+                      <Button asChild variant="ghost" className="h-auto max-w-full justify-start p-0 text-left text-sm text-primary hover:bg-transparent hover:text-primary/80">
+                        <Link
+                          to={`/app/notes/${linkedNote.id}`}
+                          state={{ returnTo: location.pathname }}
+                          onClick={() => onOpenChange(false)}
+                          className="block max-w-full overflow-hidden text-wrap break-words"
+                          style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
+                          {linkedNote.content.slice(0, 96)}
+                        </Link>
+                      </Button>
+                    ) : (
+                      <p>This task is currently standalone.</p>
+                    )}
                   </div>
                 </div>
               </div>

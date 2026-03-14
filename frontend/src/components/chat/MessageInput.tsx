@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Expand, ImagePlus, Paperclip, SendHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,16 +12,31 @@ import { toAttachment } from "@/utils/attachments";
 
 export function MessageInput({
   onSubmit,
+  autoFocus = false,
 }: {
   onSubmit: (payload: { content: string; projectId: string; attachments: NoteAttachment[] }) => Promise<void>;
+  autoFocus?: boolean;
 }) {
   const navigate = useNavigate();
   const [content, setContent] = useState("");
   const [projectId, setProjectId] = useState("work");
   const [attachments, setAttachments] = useState<NoteAttachment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!autoFocus) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      textareaRef.current?.focus({ preventScroll: true });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [autoFocus]);
 
   const handleFileSelect = (files: FileList | null) => {
     if (!files?.length) {
@@ -67,6 +82,7 @@ export function MessageInput({
     <Card className="rounded-[32px] border-white/90 p-4">
       <div className="flex flex-col gap-4">
         <Textarea
+          ref={textareaRef}
           aria-label="Message input"
           placeholder="Write a note like you would message your AI assistant..."
           value={content}

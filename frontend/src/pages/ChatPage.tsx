@@ -45,6 +45,7 @@ export function ChatPage() {
       </Card>
       <div className="shrink-0">
         <MessageInput
+          autoFocus
           onSubmit={async (payload) => {
             await addNote(payload);
           }}
