@@ -3,6 +3,7 @@ import { logger } from '../config/logger.js';
 
 type HttpError = Error & {
   statusCode?: number;
+  code?: string;
 };
 
 export function errorHandler(
@@ -25,6 +26,7 @@ export function errorHandler(
 
   response.status(statusCode).json({
     ok: false,
+    code: error.code,
     message: error.message || 'Internal server error',
   });
 }

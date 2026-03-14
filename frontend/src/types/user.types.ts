@@ -5,6 +5,7 @@ export interface User {
   email: string;
   role: string;
   plan: string;
+  emailVerified: boolean;
   onboardingCompleted: boolean;
   joinedAt: string;
 }

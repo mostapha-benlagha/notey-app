@@ -20,6 +20,12 @@ const envSchema = z.object({
   MINIO_ACCESS_KEY: z.string().min(1).default('notey'),
   MINIO_SECRET_KEY: z.string().min(8).default('noteysecret'),
   MINIO_BUCKET: z.string().min(1).default('notey-files'),
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().positive().optional(),
+  SMTP_SECURE: booleanFromEnv.optional(),
+  SMTP_USER: z.string().min(1).optional(),
+  SMTP_PASS: z.string().min(1).optional(),
+  SMTP_FROM: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -45,6 +45,12 @@ interface AuthResponse {
   user: User;
 }
 
+interface SignupResponse {
+  ok: true;
+  email: string;
+  verificationRequired: true;
+}
+
 interface MeResponse {
   ok: true;
   user: User;
@@ -102,12 +108,22 @@ export async function signup(input: {
   firstName: string;
   lastName: string;
 }) {
-  const { data } = await apiClient.post<AuthResponse>("/auth/signup", input);
+  const { data } = await apiClient.post<SignupResponse>("/auth/signup", input);
   return data;
 }
 
 export async function login(input: { email: string; password: string }) {
   const { data } = await apiClient.post<AuthResponse>("/auth/login", input);
+  return data;
+}
+
+export async function verifyEmail(token: string) {
+  const { data } = await apiClient.post<AuthResponse>("/auth/verify-email", { token });
+  return data;
+}
+
+export async function resendVerification(email: string) {
+  const { data } = await apiClient.post<SignupResponse>("/auth/resend-verification", { email });
   return data;
 }
 

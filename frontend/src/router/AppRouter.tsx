@@ -15,6 +15,7 @@ import { SettingsPage } from "@/pages/SettingsPage";
 import { SignupPage } from "@/pages/SignupPage";
 import { TaskTrashPage } from "@/pages/TaskTrashPage";
 import { TasksPage } from "@/pages/TasksPage";
+import { VerifyEmailPage } from "@/pages/VerifyEmailPage";
 
 const NoteEditorPage = lazy(() =>
   import("@/pages/NoteEditorPage").then((module) => ({ default: module.NoteEditorPage })),
@@ -30,6 +31,10 @@ export function AppRouter() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
         </Route>
+      </Route>
+
+      <Route element={<AuthLayout />}>
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
       </Route>
 
       <Route element={<OnboardingRoute />}>

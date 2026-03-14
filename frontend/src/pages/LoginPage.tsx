@@ -10,12 +10,15 @@ import { getDefaultAppRoute } from "@/utils/routes";
 
 export function LoginPage() {
   const login = useAuthStore((state) => state.login);
+  const resendVerification = useAuthStore((state) => state.resendVerification);
   const isSubmitting = useAuthStore((state) => state.isSubmitting);
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState("alex@notey.app");
   const [password, setPassword] = useState("password123");
   const [error, setError] = useState<string | null>(null);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const destination = (location.state as { from?: string } | null)?.from ?? getDefaultAppRoute();
 
@@ -53,10 +56,16 @@ export function LoginPage() {
           onClick={async () => {
             try {
               setError(null);
+              setNeedsVerification(false);
+              setSuccessMessage(null);
               await login({ email, password });
               navigate(destination, { replace: true });
             } catch (requestError) {
-              if (axios.isAxiosError<{ message?: string }>(requestError)) {
+              if (axios.isAxiosError<{ message?: string; code?: string }>(requestError)) {
+                const code = requestError.response?.data?.code;
+                if (code === "EMAIL_NOT_VERIFIED") {
+                  setNeedsVerification(true);
+                }
                 setError(requestError.response?.data?.message ?? "Unable to log in.");
                 return;
               }
@@ -68,6 +77,41 @@ export function LoginPage() {
           {isSubmitting ? "Logging in..." : "Continue to Notey"}
           <ArrowRight className="h-4 w-4" />
         </Button>
+        {needsVerification ? (
+          <div className="rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-4">
+            <p className="text-sm text-foreground/80">This account exists, but the email still needs to be verified.</p>
+            {successMessage ? <p className="mt-2 text-sm text-emerald-700">{successMessage}</p> : null}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-2xl"
+                disabled={isSubmitting}
+                onClick={async () => {
+                  try {
+                    setError(null);
+                    const response = await resendVerification(email);
+                    setSuccessMessage(`We sent a fresh verification link to ${response.email}.`);
+                  } catch (requestError) {
+                    if (axios.isAxiosError<{ message?: string }>(requestError)) {
+                      setError(requestError.response?.data?.message ?? "Unable to resend verification email.");
+                      return;
+                    }
+
+                    setError("Unable to resend verification email.");
+                  }
+                }}
+              >
+                Resend verification
+              </Button>
+              <Button asChild type="button" variant="ghost" className="rounded-2xl">
+                <Link to="/verify-email" state={{ email }}>
+                  Open verification screen
+                </Link>
+              </Button>
+            </div>
+          </div>
+        ) : null}
         <p className="text-sm text-muted-foreground">
           Need an account?{" "}
           <Link to="/signup" className="font-semibold text-primary">

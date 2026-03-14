@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/store/useAuthStore";
-import { getDefaultAppRoute } from "@/utils/routes";
 
 export function SignupPage() {
   const signup = useAuthStore((state) => state.signup);
@@ -81,8 +80,13 @@ export function SignupPage() {
           onClick={async () => {
             try {
               setError(null);
-              await signup(form);
-              navigate(getDefaultAppRoute(), { replace: true });
+              const response = await signup(form);
+              navigate("/verify-email", {
+                replace: true,
+                state: {
+                  email: response.email,
+                },
+              });
             } catch (requestError) {
               if (axios.isAxiosError<{ message?: string }>(requestError)) {
                 setError(requestError.response?.data?.message ?? "Unable to create account.");

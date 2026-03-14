@@ -1,5 +1,16 @@
 import { create } from "zustand";
-import { completeOnboarding, deleteProfile, fetchMe, getStoredToken, login, setStoredToken, signup, updateProfile } from "@/services/api";
+import {
+  completeOnboarding,
+  deleteProfile,
+  fetchMe,
+  getStoredToken,
+  login,
+  resendVerification,
+  setStoredToken,
+  signup,
+  updateProfile,
+  verifyEmail,
+} from "@/services/api";
 import { useNotesStore } from "@/store/useNotesStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTasksStore } from "@/store/useTasksStore";
@@ -21,6 +32,11 @@ interface ProfileUpdateInput {
   lastName: string;
 }
 
+interface SignupResult {
+  email: string;
+  verificationRequired: true;
+}
+
 interface AuthState {
   isAuthenticated: boolean;
   isHydrating: boolean;
@@ -28,7 +44,9 @@ interface AuthState {
   user: User | null;
   initialize: () => Promise<void>;
   login: (payload: LoginInput) => Promise<void>;
-  signup: (payload: SignupInput) => Promise<void>;
+  signup: (payload: SignupInput) => Promise<SignupResult>;
+  verifyEmail: (token: string) => Promise<void>;
+  resendVerification: (email: string) => Promise<SignupResult>;
   completeOnboarding: () => Promise<void>;
   logout: () => void;
   updateProfile: (payload: ProfileUpdateInput) => Promise<void>;
@@ -78,9 +96,31 @@ export const useAuthStore = create<AuthState>()((set) => ({
     set({ isSubmitting: true });
     try {
       const response = await signup(payload);
+      set({ isSubmitting: false, isAuthenticated: false, user: null });
+      return response;
+    } catch (error) {
+      set({ isSubmitting: false });
+      throw error;
+    }
+  },
+  verifyEmail: async (token) => {
+    set({ isSubmitting: true });
+    try {
+      const response = await verifyEmail(token);
       setStoredToken(response.token);
       set({ isAuthenticated: true, user: response.user, isSubmitting: false });
       await useSettingsStore.getState().initialize();
+    } catch (error) {
+      set({ isSubmitting: false });
+      throw error;
+    }
+  },
+  resendVerification: async (email) => {
+    set({ isSubmitting: true });
+    try {
+      const response = await resendVerification(email);
+      set({ isSubmitting: false });
+      return response;
     } catch (error) {
       set({ isSubmitting: false });
       throw error;
