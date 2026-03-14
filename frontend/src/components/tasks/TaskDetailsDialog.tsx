@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bot, Link2, NotebookTabs, Sparkles, SquarePen } from "lucide-react";
+import { Bot, Link2, NotebookTabs, SquarePen } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { NoteyLogoMark } from "@/components/brand/NoteyLogo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -183,8 +184,8 @@ export function TaskDetailsDialog({
                     .map((tag) => tag.trim())
                     .filter(Boolean)
                     .map((tag) => (
-                      <Badge key={tag} variant="outline" className="rounded-full">
-                        <Sparkles className="mr-1 h-3 w-3" />
+                      <Badge key={tag} variant="outline" className="inline-flex items-center gap-1 rounded-full">
+                        <NoteyLogoMark className="h-3 w-auto" aria-hidden />
                         {tag}
                       </Badge>
                     ))}

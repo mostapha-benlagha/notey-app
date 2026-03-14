@@ -1,4 +1,5 @@
 const path = require("node:path");
+const fs = require("node:fs");
 const { app, BrowserWindow, Menu, Tray, nativeImage } = require("electron");
 
 const isDev = !app.isPackaged;
@@ -9,18 +10,23 @@ let tray = null;
 let isQuitting = false;
 let trayNoticeShown = false;
 
+function getTrayIconPath() {
+  return path.join(__dirname, "assets", "tray-icon.png");
+}
+
 function createTrayIcon() {
+  const iconPath = getTrayIconPath();
+  if (fs.existsSync(iconPath)) {
+    return nativeImage.createFromPath(iconPath);
+  }
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-      <rect width="64" height="64" rx="20" fill="#FDF9F2"/>
-      <rect x="8" y="8" width="48" height="48" rx="16" fill="#1663C7"/>
-      <rect x="18" y="18" width="28" height="28" rx="8" fill="#FFFFFF"/>
-      <rect x="24" y="26" width="16" height="4" rx="2" fill="#D8E9FB"/>
-      <rect x="24" y="34" width="12" height="4" rx="2" fill="#D8E9FB"/>
-      <circle cx="40" cy="40" r="6" fill="#1663C7"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+      <rect x="32" y="32" width="960" height="960" rx="220" fill="#071942"/>
+      <circle cx="320" cy="512" r="120" fill="#2F80ED"/>
+      <rect x="440" y="488" width="170" height="48" rx="24" fill="#EDEDED"/>
+      <circle cx="704" cy="512" r="120" fill="#84C341"/>
     </svg>
   `;
-
   return nativeImage.createFromDataURL(`data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`);
 }
 
@@ -75,13 +81,23 @@ function createTray() {
   });
 }
 
+function getAppIconPath() {
+  const pngPath = path.join(__dirname, "assets", "tray-icon.png");
+  if (fs.existsSync(pngPath)) {
+    return pngPath;
+  }
+  return path.join(__dirname, "..", "frontend", "public", "icons", "notey-app-icon.svg");
+}
+
 function createMainWindow() {
+  const iconPath = getAppIconPath();
   mainWindow = new BrowserWindow({
     width: 1520,
     height: 980,
     minWidth: 1180,
     minHeight: 760,
     backgroundColor: "#fdfaf5",
+    icon: iconPath,
     autoHideMenuBar: true,
     show: false,
     webPreferences: {

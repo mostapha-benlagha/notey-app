@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { PlusCircle, Sparkles } from "lucide-react";
+import { PlusCircle } from "lucide-react";
+import { NoteyLogoMark } from "@/components/brand/NoteyLogo";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -114,7 +115,7 @@ export function CreateTaskDialog({
           </label>
           <div className="rounded-[24px] border border-white/80 bg-secondary/35 p-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2 font-medium text-foreground">
-              <Sparkles className="h-4 w-4 text-primary" />
+              <NoteyLogoMark className="h-5 w-auto" aria-hidden />
               Shared task system
             </div>
             <p className="mt-2 leading-7">

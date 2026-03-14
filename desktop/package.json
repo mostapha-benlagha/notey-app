@@ -9,15 +9,18 @@
     "start": "electron .",
     "build:web": "pnpm --dir ../frontend build",
     "dist": "pnpm run build:web && electron-builder",
-    "pack": "pnpm run build:web && electron-builder --dir"
+    "pack": "pnpm run build:web && electron-builder --dir",
+    "generate-tray-icon": "node scripts/generate-tray-icon.cjs"
   },
   "build": {
     "appId": "com.notey.desktop",
     "productName": "Notey",
+    "icon": "../frontend/public/icons/notey-app-icon",
     "files": [
       "main.cjs",
       "preload.cjs",
-      "package.json"
+      "package.json",
+      "assets"
     ],
     "extraResources": [
       {
@@ -36,6 +39,7 @@
     "concurrently": "^9.2.1",
     "electron": "^37.3.1",
     "electron-builder": "^26.0.12",
+    "sharp": "^0.33.5",
     "wait-on": "^8.0.5"
   }
 }

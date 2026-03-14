@@ -1,5 +1,6 @@
-import { ArrowLeft, FilePenLine, FolderSearch, Sparkles } from "lucide-react";
+import { ArrowLeft, FilePenLine, FolderSearch } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { NoteyLogoMark } from "@/components/brand/NoteyLogo";
 import { ChatContainer } from "@/components/chat/ChatContainer";
 import { ProjectOverview } from "@/components/projects/ProjectOverview";
 import { TaskTrashPanel } from "@/components/tasks/TaskTrashPanel";
@@ -51,7 +52,7 @@ export function ProjectPage() {
               </Link>
             </Button>
             <Button className="rounded-2xl" onClick={() => navigate("/app")}>
-              <Sparkles className="h-4 w-4" />
+              <NoteyLogoMark className="h-4 w-auto" aria-hidden />
               Browse active projects
             </Button>
           </div>

@@ -1,5 +1,6 @@
-import { LogOut, Maximize2, Minimize2, Settings2, Sparkles, SquareCheckBig, UserCircle2 } from "lucide-react";
+import { LogOut, Maximize2, Minimize2, MessageSquare, Settings2, SquareCheckBig, UserCircle2 } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import { NoteyAppIcon } from "@/components/brand/NoteyLogo";
 import { ProjectList } from "@/components/projects/ProjectList";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -28,8 +29,8 @@ export function Sidebar() {
     <Card className="surface-grid flex h-full flex-col rounded-[32px] p-5">
       <div className="flex items-start justify-between gap-3 px-2">
         <Link to="/app" className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <Sparkles className="h-5 w-5" />
+          <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-primary">
+            <NoteyAppIcon className="h-7 w-7" aria-hidden />
           </div>
           <div>
             <p className="text-lg font-extrabold">Notey</p>
@@ -49,7 +50,7 @@ export function Sidebar() {
       </div>
       <nav className="mt-8 space-y-1">
         <NavLink to="/app" end className={navLinkClass}>
-          <Sparkles className="h-4 w-4" />
+          <MessageSquare className="h-4 w-4" />
           Chat
         </NavLink>
         <NavLink to="/app/tasks" className={navLinkClass}>

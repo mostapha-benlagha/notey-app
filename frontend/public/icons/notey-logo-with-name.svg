@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="500" viewBox="0 0 1400 500" role="img" aria-label="Notey logo">
+  <rect width="1400" height="500" fill="none"/>
+  <g transform="translate(80,250)">
+    <circle cx="80" cy="0" r="55" fill="#2F80ED"/>
+    <rect x="135" y="-10" width="130" height="20" rx="10" fill="#EDEDED"/>
+    <circle cx="320" cy="0" r="55" fill="#84C341"/>
+  </g>
+  <text x="460" y="305" font-family="Inter, Poppins, Arial, sans-serif" font-size="170" font-weight="700" fill="#071942">Notey</text>
+</svg>

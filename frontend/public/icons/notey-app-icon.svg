@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="Notey app icon">
+  <rect x="32" y="32" width="960" height="960" rx="220" fill="#071942"/>
+  <circle cx="320" cy="512" r="120" fill="#2F80ED"/>
+  <rect x="440" y="488" width="170" height="48" rx="24" fill="#EDEDED"/>
+  <circle cx="704" cy="512" r="120" fill="#84C341"/>
+</svg>

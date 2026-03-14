@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="160" viewBox="0 0 400 160" role="img" aria-label="Notey icon mark">
+  <rect width="400" height="160" fill="none"/>
+  <g transform="translate(0,0)">
+    <circle cx="90" cy="80" r="38" fill="#2F80ED"/>
+    <rect x="128" y="73" width="110" height="14" rx="7" fill="#EDEDED"/>
+    <circle cx="275" cy="80" r="38" fill="#84C341"/>
+  </g>
+</svg>

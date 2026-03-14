@@ -1,5 +1,6 @@
-import { ArrowRight, CheckCircle2, FilePenLine, FolderKanban, Sparkles, type LucideIcon } from "lucide-react";
+import { ArrowRight, CheckCircle2, FilePenLine, FolderKanban, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
+import { NoteyLogoFull } from "@/components/brand/NoteyLogo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -14,15 +15,9 @@ export function LandingPage() {
     <div className="min-h-screen bg-background px-4 py-6 md:px-6">
       <div className="mx-auto max-w-[1440px]">
         <header className="flex items-center justify-between rounded-[32px] border border-white/80 bg-white/70 px-5 py-4 shadow-soft backdrop-blur">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-lg font-extrabold">Notey</p>
-              <p className="text-sm text-muted-foreground">AI note assistant</p>
-            </div>
-          </div>
+          <Link to="/" className="flex items-center gap-3">
+            <NoteyLogoFull className="h-9 w-auto" aria-hidden />
+          </Link>
           <div className="flex gap-2">
             <Button asChild variant="ghost" className="rounded-2xl">
               <Link to="/login">Log in</Link>

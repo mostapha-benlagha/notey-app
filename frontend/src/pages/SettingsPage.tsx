@@ -1,4 +1,4 @@
-import { Bell, LockKeyhole, Sparkles, Wand2, Workflow } from "lucide-react";
+import { Bell, LockKeyhole, Wand2, Workflow } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
