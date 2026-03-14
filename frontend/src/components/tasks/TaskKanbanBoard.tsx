@@ -84,23 +84,11 @@ export function TaskKanbanBoard({
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {columnTasks.length ? (
-                    columnTasks.map((task, index) => {
+                    columnTasks.map((task) => {
                       const project = projects.find((item) => item.id === task.projectId);
                       const note = notes.find((item) => item.id === task.noteId);
                       return (
-                        <div key={task.id} className="space-y-2">
-                          <button
-                            type="button"
-                            aria-label={`Move into ${status.label} position ${index + 1}`}
-                            className="h-2 w-full rounded-full bg-transparent transition hover:bg-primary/10"
-                            onDragOver={(event) => event.preventDefault()}
-                            onDrop={() => {
-                              if (draggedTaskId) {
-                                void onMoveTask(draggedTaskId, status.id, index);
-                              }
-                              setDraggedTaskId(null);
-                            }}
-                          />
+                        <div key={task.id}>
                           <div onDragStart={() => setDraggedTaskId(task.id)} onDragEnd={() => setDraggedTaskId(null)}>
                             <KanbanTaskCard
                               task={task}
