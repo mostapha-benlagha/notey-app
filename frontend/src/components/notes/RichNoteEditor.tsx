@@ -58,7 +58,7 @@ export function RichNoteEditor({ content, onChange }: RichNoteEditorProps) {
     editorProps: {
       attributes: {
         class:
-          "notey-editor min-h-[420px] w-full rounded-[28px] border border-white/80 bg-white/80 px-6 py-5 text-[15px] leading-7 text-foreground shadow-soft focus:outline-none",
+          "notey-editor min-h-[420px] w-full px-6 py-5 text-[15px] leading-7 text-foreground focus:outline-none",
       },
     },
     onUpdate: ({ editor: currentEditor }) => {

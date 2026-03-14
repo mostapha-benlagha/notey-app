@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ImagePlus, Paperclip, Save } from "lucide-react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { AttachmentPreview } from "@/components/chat/AttachmentPreview";
+import { VoiceRecorderButton } from "@/components/chat/VoiceRecorderButton";
 import { RichNoteEditor } from "@/components/notes/RichNoteEditor";
 import { ProjectSelector } from "@/components/projects/ProjectSelector";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { uploadNoteAttachments } from "@/services/api";
 import { useNotesStore } from "@/store/useNotesStore";
 import type { NoteAttachment } from "@/types/note.types";
-import { toAttachment } from "@/utils/attachments";
+import { audioBlobToAttachment, toAttachment } from "@/utils/attachments";
 import { plainTextToHtml } from "@/utils/noteContent";
 
 interface DraftState {
@@ -141,6 +142,12 @@ export function NoteEditorPage() {
                 <Paperclip className="h-4 w-4" />
                 File
               </Button>
+              <VoiceRecorderButton
+                className="rounded-2xl"
+                onRecorded={(blob) => {
+                  setAttachments((current) => [...current, audioBlobToAttachment(blob)]);
+                }}
+              />
             </div>
           </div>
         </div>

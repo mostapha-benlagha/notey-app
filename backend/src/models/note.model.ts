@@ -14,7 +14,7 @@ const noteAttachmentSchema = new Schema(
     },
     kind: {
       type: String,
-      enum: ['image', 'file'],
+      enum: ['image', 'file', 'audio'],
       required: true,
     },
     sizeLabel: {

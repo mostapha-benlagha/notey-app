@@ -3,7 +3,7 @@ import { z } from "zod";
 export const noteAttachmentSchema = z.object({
   id: z.string(),
   name: z.string().min(1),
-  kind: z.enum(["image", "file"]),
+  kind: z.enum(["image", "file", "audio"]),
   sizeLabel: z.string().min(1),
   objectKey: z.string().min(1).optional(),
   url: z.string().min(1).optional(),

@@ -61,9 +61,17 @@ function getAttachmentKind(mimeType: string, originalName: string) {
     return 'image' as const;
   }
 
+  if (mimeType.startsWith('audio/')) {
+    return 'audio' as const;
+  }
+
   const extension = path.extname(originalName).toLowerCase();
   if (['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(extension)) {
     return 'image' as const;
+  }
+
+  if (['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.webm'].includes(extension)) {
+    return 'audio' as const;
   }
 
   return 'file' as const;

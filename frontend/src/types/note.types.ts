@@ -1,4 +1,4 @@
-export type AttachmentKind = "image" | "file";
+export type AttachmentKind = "image" | "file" | "audio";
 
 export interface NoteAttachment {
   id: string;

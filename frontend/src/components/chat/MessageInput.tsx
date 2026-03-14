@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Expand, ImagePlus, Paperclip, SendHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { VoiceRecorderButton } from "@/components/chat/VoiceRecorderButton";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,7 +9,7 @@ import type { NoteAttachment } from "@/types/note.types";
 import { AttachmentPreview } from "@/components/chat/AttachmentPreview";
 import { ProjectSelector } from "@/components/projects/ProjectSelector";
 import { uploadNoteAttachments } from "@/services/api";
-import { toAttachment } from "@/utils/attachments";
+import { audioBlobToAttachment, toAttachment } from "@/utils/attachments";
 
 export function MessageInput({
   onSubmit,
@@ -111,6 +112,12 @@ export function MessageInput({
                 <Paperclip className="h-4 w-4" />
                 File
               </Button>
+              <VoiceRecorderButton
+                size="sm"
+                onRecorded={(blob) => {
+                  setAttachments((current) => [...current, audioBlobToAttachment(blob)]);
+                }}
+              />
             </div>
           </div>
           <Button type="button" onClick={() => void submit()} disabled={isSubmitting}>
