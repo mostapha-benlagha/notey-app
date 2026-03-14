@@ -1,4 +1,4 @@
-import { ArrowRight, CheckCircle2, FilePenLine, FolderKanban, type LucideIcon } from "lucide-react";
+import { ArrowRight, CheckCircle2, Download, FilePenLine, FolderKanban, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { NoteyLogoFull } from "@/components/brand/NoteyLogo";
 import { Button } from "@/components/ui/button";
@@ -41,12 +41,22 @@ export function LandingPage() {
                 <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
                   Capture a thought like a message, expand it into a full document, and let the system turn notes into tags, tasks, and project context.
                 </p>
+                <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/80 px-4 py-2 text-sm text-foreground/80 shadow-soft">
+                  <span className="font-semibold text-foreground">Now on desktop</span>
+                  <span className="text-muted-foreground">Download for Windows and macOS coming online here.</span>
+                </div>
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Button asChild size="lg" className="rounded-2xl">
                     <Link to="/signup">
                       Build your workspace
                       <ArrowRight className="h-4 w-4" />
                     </Link>
+                  </Button>
+                  <Button asChild variant="secondary" size="lg" className="rounded-2xl">
+                    <a href="#" onClick={(event) => event.preventDefault()} aria-label="Download Notey desktop app">
+                      <Download className="h-4 w-4" />
+                      Download desktop app
+                    </a>
                   </Button>
                   <Button asChild variant="outline" size="lg" className="rounded-2xl">
                     <Link to="/login">See the app</Link>
