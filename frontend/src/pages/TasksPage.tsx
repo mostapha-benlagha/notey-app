@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Search, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
 import { TaskKanbanBoard } from "@/components/tasks/TaskKanbanBoard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,8 @@ export function TasksPage() {
   const selectedProjectId = useProjectsStore((state) => state.selectedProjectId);
   const statuses = useTasksStore((state) => state.statuses);
   const tasks = useTasksStore((state) => state.tasks);
+  const isLoading = useTasksStore((state) => state.isLoading);
+  const addTask = useTasksStore((state) => state.addTask);
   const createStatus = useTasksStore((state) => state.createStatus);
   const saveStatuses = useTasksStore((state) => state.saveStatuses);
   const moveTask = useTasksStore((state) => state.moveTask);
@@ -53,14 +56,23 @@ export function TasksPage() {
       <Card className="flex min-h-0 flex-1 flex-col rounded-[32px]">
         <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <CardDescription>AI extracted task board</CardDescription>
-            <CardTitle className="text-3xl">Move work across your task pipeline</CardTitle>
+            <CardDescription>Unified task board</CardDescription>
+            <CardTitle className="text-3xl">Move manual and AI-generated work across your pipeline</CardTitle>
           </div>
           <div className="flex w-full max-w-2xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
             <div className="relative w-full max-w-md">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input className="pl-10" placeholder="Filter tasks, notes, or statuses..." value={query} onChange={(event) => setQuery(event.target.value)} />
             </div>
+            <CreateTaskDialog
+              notes={notes}
+              projects={projects}
+              selectedProjectId={selectedProjectId}
+              statuses={statuses}
+              onSubmit={async (payload) => {
+                await addTask(payload);
+              }}
+            />
             <Button asChild variant="outline" className="rounded-2xl">
               <Link to="/app/tasks/trash">
                 <Trash2 className="h-4 w-4" />
@@ -70,17 +82,23 @@ export function TasksPage() {
           </div>
         </CardHeader>
         <CardContent className="flex min-h-0 flex-1 flex-col">
-          <TaskKanbanBoard
-            statuses={statuses}
-            tasks={filteredTasks}
-            notes={notes}
-            projects={projects}
-            onMoveTask={moveTask}
-            onToggleDone={toggleTask}
-            onTrashTask={trashTask}
-            onCreateStatus={(label) => createStatus(label)}
-            onSaveStatuses={saveStatuses}
-          />
+          {isLoading ? (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading tasks...</div>
+          ) : (
+            <TaskKanbanBoard
+              statuses={statuses}
+              tasks={filteredTasks}
+              notes={notes}
+              projects={projects}
+              onMoveTask={moveTask}
+              onToggleDone={toggleTask}
+              onTrashTask={trashTask}
+              onCreateStatus={async (label) => {
+                await createStatus(label);
+              }}
+              onSaveStatuses={saveStatuses}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

@@ -40,7 +40,7 @@ export function TaskTrashPage() {
             <Button
               variant="outline"
               className="rounded-2xl border-rose-200 text-rose-700 hover:bg-rose-50"
-              onClick={() => emptyTrash(selectedProjectId)}
+              onClick={() => void emptyTrash(selectedProjectId)}
               disabled={!trashTasks.length}
             >
               <Trash2 className="h-4 w-4" />
@@ -54,8 +54,8 @@ export function TaskTrashPage() {
         statuses={statuses}
         notes={notes}
         projects={projects}
-        onRestore={restoreTask}
-        onPermanentDelete={permanentlyDeleteTask}
+        onRestore={(taskId) => void restoreTask(taskId)}
+        onPermanentDelete={(taskId) => void permanentlyDeleteTask(taskId)}
       />
       {!trashTasks.length ? (
         <Card className="rounded-[32px]">

@@ -69,6 +69,7 @@ export const mockTasks: Task[] = [
     statusId: "draft",
     projectId: "work",
     noteId: "note1",
+    source: "note_ai",
     deletedAt: null,
   },
   {
@@ -77,6 +78,7 @@ export const mockTasks: Task[] = [
     statusId: "in-progress",
     projectId: "work",
     noteId: "note1",
+    source: "note_ai",
     deletedAt: null,
   },
   {
@@ -85,6 +87,7 @@ export const mockTasks: Task[] = [
     statusId: "done",
     projectId: "startup",
     noteId: "note2",
+    source: "note_ai",
     deletedAt: null,
   },
 ];

@@ -4,6 +4,7 @@ import { authRouter } from '../features/auth/auth.routes.js';
 import { notesRouter } from '../features/notes/notes.routes.js';
 import { onboardingRouter } from '../features/onboarding/onboarding.routes.js';
 import { settingsRouter } from '../features/settings/settings.routes.js';
+import { tasksRouter } from '../features/tasks/tasks.routes.js';
 import { healthRouter } from './health.js';
 
 export const apiRouter = Router();
@@ -21,3 +22,4 @@ apiRouter.use('/account', accountRouter);
 apiRouter.use('/onboarding', onboardingRouter);
 apiRouter.use('/settings', settingsRouter);
 apiRouter.use('/notes', notesRouter);
+apiRouter.use('/tasks', tasksRouter);

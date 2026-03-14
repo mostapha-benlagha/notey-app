@@ -1,11 +1,19 @@
 import { z } from "zod";
 
+export const taskStatusSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  colorClass: z.string().min(1),
+  kind: z.enum(["system", "custom"]),
+});
+
 export const taskSchema = z.object({
   id: z.string(),
   title: z.string().min(1),
   statusId: z.string().min(1),
   projectId: z.string().min(1),
-  noteId: z.string().min(1),
+  noteId: z.string().nullable(),
+  source: z.enum(["manual", "note_ai"]),
   deletedAt: z.string().nullable(),
 });
 

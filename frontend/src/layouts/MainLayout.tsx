@@ -4,14 +4,17 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { cn } from "@/lib/utils";
 import { useNotesStore } from "@/store/useNotesStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { useTasksStore } from "@/store/useTasksStore";
 
 export function MainLayout() {
   const fullWidthWorkspaceEnabled = useSettingsStore((state) => state.fullWidthWorkspaceEnabled);
   const initializeNotes = useNotesStore((state) => state.initialize);
+  const initializeTasks = useTasksStore((state) => state.initialize);
 
   useEffect(() => {
     void initializeNotes();
-  }, [initializeNotes]);
+    void initializeTasks();
+  }, [initializeNotes, initializeTasks]);
 
   return (
     <div className="h-screen overflow-hidden p-4 md:p-6">

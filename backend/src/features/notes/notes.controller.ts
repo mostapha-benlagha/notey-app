@@ -4,6 +4,7 @@ import type { Request, Response } from 'express';
 import { Client as MinioClient } from 'minio';
 import { env } from '../../config/env.js';
 import { NoteModel } from '../../models/note.model.js';
+import { TaskModel } from '../../models/task.model.js';
 import { createNoteSchema, updateNoteSchema } from '../../schemas/note.schema.js';
 import { serializeNote } from './note.serializer.js';
 
@@ -210,6 +211,8 @@ export async function deleteNote(request: Request, response: Response) {
   }
 
   await Promise.all(note.attachments.map((attachment) => removeAttachmentObject(attachment.objectKey)));
+  await TaskModel.deleteMany({ userId: user._id, noteId: request.params.noteId, source: 'note_ai' });
+  await TaskModel.updateMany({ userId: user._id, noteId: request.params.noteId, source: 'manual' }, { $set: { noteId: null } });
 
   response.status(204).send();
 }

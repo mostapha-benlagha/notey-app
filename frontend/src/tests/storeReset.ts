@@ -10,6 +10,7 @@ export function resetAllStores() {
   });
 
   useTasksStore.setState({
+    isLoading: false,
     statuses: [...mockTaskStatuses],
     tasks: [...mockTasks],
   });

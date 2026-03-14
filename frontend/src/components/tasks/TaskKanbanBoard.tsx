@@ -25,11 +25,11 @@ export function TaskKanbanBoard({
   tasks: Task[];
   notes: Note[];
   projects: Project[];
-  onMoveTask: (taskId: string, statusId: string) => void;
-  onToggleDone: (taskId: string) => void;
-  onTrashTask: (taskId: string) => void;
-  onCreateStatus: (label: string) => void;
-  onSaveStatuses: (statuses: TaskStatus[]) => void;
+  onMoveTask: (taskId: string, statusId: string) => Promise<void>;
+  onToggleDone: (taskId: string) => Promise<void>;
+  onTrashTask: (taskId: string) => Promise<void>;
+  onCreateStatus: (label: string) => Promise<void>;
+  onSaveStatuses: (statuses: TaskStatus[]) => Promise<void>;
 }) {
   const [newStatus, setNewStatus] = useState("");
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
@@ -46,8 +46,8 @@ export function TaskKanbanBoard({
         <Button
           variant="outline"
           className="rounded-2xl"
-          onClick={() => {
-            onCreateStatus(newStatus);
+          onClick={async () => {
+            await onCreateStatus(newStatus);
             setNewStatus("");
           }}
         >
@@ -67,7 +67,7 @@ export function TaskKanbanBoard({
                 onDragOver={(event) => event.preventDefault()}
                 onDrop={() => {
                   if (draggedTaskId) {
-                    onMoveTask(draggedTaskId, status.id);
+                    void onMoveTask(draggedTaskId, status.id);
                   }
                   setDraggedTaskId(null);
                 }}
@@ -92,8 +92,8 @@ export function TaskKanbanBoard({
                             project={project}
                             notePreview={note?.content.slice(0, 64)}
                             status={status}
-                            onToggleDone={() => onToggleDone(task.id)}
-                            onTrash={() => onTrashTask(task.id)}
+                            onToggleDone={() => void onToggleDone(task.id)}
+                            onTrash={() => void onTrashTask(task.id)}
                           />
                         </div>
                       );

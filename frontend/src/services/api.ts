@@ -1,9 +1,10 @@
 import axios from "axios";
 import { noteSchema } from "@/schemas/note.schema";
 import { projectSchema } from "@/schemas/project.schema";
-import { taskSchema } from "@/schemas/task.schema";
-import { mockNotes, mockProjects, mockTasks } from "@/services/mockData";
+import { taskSchema, taskStatusSchema } from "@/schemas/task.schema";
+import { mockProjects } from "@/services/mockData";
 import type { Note, NoteAttachment } from "@/types/note.types";
+import type { Task, TaskStatus } from "@/types/task.types";
 import type { User } from "@/types/user.types";
 import type { Settings } from "@/types/settings.types";
 
@@ -76,6 +77,22 @@ interface NoteResponse {
 interface UploadAttachmentsResponse {
   ok: true;
   attachments: NoteAttachment[];
+}
+
+interface TasksResponse {
+  ok: true;
+  tasks: Task[];
+  statuses: TaskStatus[];
+}
+
+interface TaskResponse {
+  ok: true;
+  task: Task;
+}
+
+interface ExtractedTasksResponse {
+  ok: true;
+  tasks: Task[];
 }
 
 export async function signup(input: {
@@ -196,5 +213,59 @@ export async function fetchProjects() {
 }
 
 export async function fetchTasks() {
-  return Promise.resolve(mockTasks.map((task) => taskSchema.parse(task)));
+  const { data } = await apiClient.get<TasksResponse>("/tasks");
+  return {
+    tasks: data.tasks.map((task) => taskSchema.parse(task)),
+    statuses: data.statuses.map((status) => taskStatusSchema.parse(status)),
+  };
+}
+
+export async function createTask(input: {
+  title: string;
+  projectId: string;
+  noteId: string | null;
+  statusId: string;
+}) {
+  const { data } = await apiClient.post<TaskResponse>("/tasks", input);
+  return taskSchema.parse(data.task);
+}
+
+export async function createExtractedTasks(input: {
+  noteId: string;
+  projectId: string;
+  titles: string[];
+}) {
+  const { data } = await apiClient.post<ExtractedTasksResponse>("/tasks/extracted", input);
+  return data.tasks.map((task) => taskSchema.parse(task));
+}
+
+export async function updateTask(input: {
+  id: string;
+  title?: string;
+  projectId?: string;
+  noteId?: string | null;
+  statusId?: string;
+  deletedAt?: string | null;
+}) {
+  const { id, ...payload } = input;
+  const { data } = await apiClient.patch<TaskResponse>(`/tasks/${id}`, payload);
+  return taskSchema.parse(data.task);
+}
+
+export async function deleteTask(taskId: string) {
+  await apiClient.delete(`/tasks/${taskId}`);
+}
+
+export async function emptyTaskTrash(projectId?: string | null) {
+  await apiClient.delete("/tasks/trash", {
+    params: projectId ? { projectId } : undefined,
+  });
+}
+
+export async function saveTaskStatuses(statuses: TaskStatus[]) {
+  const { data } = await apiClient.put<TasksResponse>("/tasks/statuses", { statuses });
+  return {
+    tasks: data.tasks.map((task) => taskSchema.parse(task)),
+    statuses: data.statuses.map((status) => taskStatusSchema.parse(status)),
+  };
 }

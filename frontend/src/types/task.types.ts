@@ -1,4 +1,5 @@
 export type TaskStatusId = string;
+export type TaskSource = "manual" | "note_ai";
 
 export interface TaskStatus {
   id: TaskStatusId;
@@ -12,6 +13,7 @@ export interface Task {
   title: string;
   statusId: TaskStatusId;
   projectId: string;
-  noteId: string;
+  noteId: string | null;
+  source: TaskSource;
   deletedAt: string | null;
 }

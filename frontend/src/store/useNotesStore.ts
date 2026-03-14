@@ -79,17 +79,11 @@ export const useNotesStore = create<NotesState>((set, get) => ({
 
     const taskTitles = taskExtractionEnabled ? extractTasks(parsed.content) : [];
     if (taskTitles.length) {
-      const addTask = useTasksStore.getState().addTask;
-      taskTitles.forEach((title, index) =>
-        addTask({
-          id: `task-${note.id}-${index}`,
-          title,
-          statusId: "draft",
-          projectId: note.projectId,
-          noteId: note.id,
-          deletedAt: null,
-        }),
-      );
+      await useTasksStore.getState().createExtractedTasks({
+        noteId: note.id,
+        projectId: note.projectId,
+        titles: taskTitles,
+      });
     }
 
     set((state) => ({
@@ -130,7 +124,7 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   },
   deleteNote: async (noteId) => {
     await deleteNoteRequest(noteId);
-    useTasksStore.getState().removeTasksByNote(noteId);
+    useTasksStore.getState().handleNoteDeleted(noteId);
 
     set((state) => ({
       notes: state.notes.filter((note) => note.id !== noteId),

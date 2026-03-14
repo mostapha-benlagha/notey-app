@@ -24,10 +24,11 @@ export function StatusSettingsDialog({
   onSave,
 }: {
   statuses: TaskStatus[];
-  onSave: (statuses: TaskStatus[]) => void;
+  onSave: (statuses: TaskStatus[]) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
   const [draftStatuses, setDraftStatuses] = useState<EditableStatus[]>(statuses);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -155,19 +156,25 @@ export function StatusSettingsDialog({
             <Button
               type="button"
               className="rounded-2xl"
-                onClick={() => {
-                  onSave(
+              disabled={isSaving}
+              onClick={async () => {
+                setIsSaving(true);
+                try {
+                  await onSave(
                   draftStatuses.map((status) => ({
-                      colorClass: status.colorClass,
-                      id: status.id,
-                      kind: status.kind,
-                      label: status.label.trim() || "Untitled status",
-                    })),
-                );
-                setOpen(false);
+                    colorClass: status.colorClass,
+                    id: status.id,
+                    kind: status.kind,
+                    label: status.label.trim() || "Untitled status",
+                  })),
+                  );
+                  setOpen(false);
+                } finally {
+                  setIsSaving(false);
+                }
               }}
             >
-              Save statuses
+              {isSaving ? "Saving..." : "Save statuses"}
             </Button>
           </div>
         </DialogFooter>

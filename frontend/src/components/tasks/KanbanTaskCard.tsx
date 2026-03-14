@@ -1,4 +1,4 @@
-import { Link2, NotebookTabs, RotateCcw, Trash2, CheckCircle2 } from "lucide-react";
+import { Bot, CheckCircle2, Link2, NotebookTabs, RotateCcw, SquarePen, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -36,6 +36,10 @@ export function KanbanTaskCard({
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-semibold leading-6 text-foreground/95">{task.title}</h3>
             {status ? <Badge className={status.colorClass}>{status.label}</Badge> : null}
+            <Badge variant="outline" className="gap-1 rounded-full">
+              {task.source === "note_ai" ? <Bot className="h-3 w-3" /> : <SquarePen className="h-3 w-3" />}
+              {task.source === "note_ai" ? "AI" : "Manual"}
+            </Badge>
           </div>
           <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
             {project ? (
