@@ -6,7 +6,7 @@ import { env } from '../../config/env.js';
 import { NoteModel } from '../../models/note.model.js';
 import { TaskModel } from '../../models/task.model.js';
 import { createNoteSchema, updateNoteSchema } from '../../schemas/note.schema.js';
-import { queueNoteAnalysis } from '../../services/note-analysis.service.js';
+import { hasGeminiNoteAnalysisConfig, queueNoteAnalysis } from '../../services/gemini-note-analysis.service.js';
 import { serializeNote } from './note.serializer.js';
 
 function requireUser(request: Request) {
@@ -157,13 +157,15 @@ export async function createNote(request: Request, response: Response) {
     tags: payload.tags,
     attachments: payload.attachments,
     analysis: {
-      status: 'pending',
-      summary: 'Analysis queued.',
+      status: hasGeminiNoteAnalysisConfig() ? 'pending' : 'idle',
+      summary: hasGeminiNoteAnalysisConfig() ? 'Analysis queued.' : '',
       lastAnalyzedAt: null,
     },
   });
 
-  queueNoteAnalysis(note.id, user._id);
+  if (hasGeminiNoteAnalysisConfig()) {
+    queueNoteAnalysis(note.id, user._id);
+  }
 
   response.status(201).json({
     ok: true,

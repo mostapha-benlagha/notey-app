@@ -1,21 +1,27 @@
+import type { Types } from 'mongoose';
 import { env } from '../config/env.js';
 import { logger } from '../config/logger.js';
+import { NoteModel } from '../models/note.model.js';
+import { SettingsModel } from '../models/settings.model.js';
+import { TaskModel } from '../models/task.model.js';
+import { publishNoteAnalysisUpdate } from './realtime.service.js';
+import { ensureTaskStatus, ensureTaskStatuses } from './task-status.service.js';
 
-interface OpenAiNoteAnalysisInput {
+interface GeminiNoteAnalysisInput {
   content: string;
   fallbackProjectId: string;
   recentProjectNotes: string[];
 }
 
-interface OpenAiTodoItem {
+interface GeminiTodoItem {
   title: string;
   details: string;
 }
 
-interface OpenAiNoteAnalysisResult {
+interface GeminiNoteAnalysisResult {
   suggestedProjectId: string;
   tags: string[];
-  todoItems: OpenAiTodoItem[];
+  todoItems: GeminiTodoItem[];
   completedSignals: string[];
   prompt: string;
 }
@@ -30,10 +36,32 @@ const genericProjectIds = new Set(['none', 'null', 'misc', 'general', 'other']);
 const weakTags = new Set(['meeting', 'product', 'operations', 'review', 'insight', 'priority', 'general', 'work', 'personal', 'note', 'task', 'update', 'misc']);
 const technicalProjectIds = new Set(['deployment', 'infrastructure', 'backend', 'frontend', 'devops', 'engineering', 'notey']);
 const personalProjectIds = new Set(['personal', 'home', 'family', 'errands']);
+const runningJobs = new Set<string>();
+const MATCH_STOP_WORDS = new Set([
+  'the',
+  'and',
+  'for',
+  'with',
+  'from',
+  'that',
+  'this',
+  'into',
+  'about',
+  'because',
+  'before',
+  'after',
+  'while',
+  'need',
+  'still',
+  'just',
+  'have',
+  'yesterday',
+  'today',
+  'tomorrow',
+]);
 
 const responseSchema = {
   type: 'object',
-  additionalProperties: false,
   required: ['projectId', 'tags', 'todoItems', 'completedSignals'],
   properties: {
     projectId: {
@@ -53,7 +81,6 @@ const responseSchema = {
       type: 'array',
       items: {
         type: 'object',
-        additionalProperties: false,
         required: ['title', 'details'],
         properties: {
           title: {
@@ -158,11 +185,10 @@ function buildCompactTodoTitle(value: string) {
     return titleCase(normalized);
   }
 
-  const shortened = words.slice(0, 8).join(' ');
-  return titleCase(shortened);
+  return titleCase(words.slice(0, 8).join(' '));
 }
 
-function buildPrompt(input: OpenAiNoteAnalysisInput) {
+function buildPrompt(input: GeminiNoteAnalysisInput) {
   return [
     'You analyze one Notey note and return structured JSON for downstream automation.',
     'The current note is the primary source of truth. Use recent notes only as secondary context.',
@@ -236,63 +262,25 @@ function buildPrompt(input: OpenAiNoteAnalysisInput) {
   ].join('\n');
 }
 
-function extractParsedOutput(payload: unknown) {
-  if (!payload || typeof payload !== 'object') {
-    return null;
-  }
-
-  const response = payload as {
-    output_parsed?: unknown;
-    output?: Array<{
-      content?: Array<{
-        parsed?: unknown;
-      }>;
-    }>;
-  };
-
-  if (response.output_parsed && typeof response.output_parsed === 'object') {
-    return response.output_parsed;
-  }
-
-  for (const item of response.output ?? []) {
-    for (const contentItem of item.content ?? []) {
-      if (contentItem.parsed && typeof contentItem.parsed === 'object') {
-        return contentItem.parsed;
-      }
-    }
-  }
-
-  return null;
-}
-
-function extractOutputText(payload: unknown) {
+function extractTextFromGeminiResponse(payload: unknown) {
   if (!payload || typeof payload !== 'object') {
     return '';
   }
 
   const response = payload as {
-    output_text?: unknown;
-    output?: Array<{
-      content?: Array<{
-        type?: string;
-        text?: unknown;
-      }>;
+    candidates?: Array<{
+      content?: {
+        parts?: Array<{
+          text?: unknown;
+        }>;
+      };
     }>;
   };
 
-  if (typeof response.output_text === 'string' && response.output_text.trim()) {
-    return response.output_text;
-  }
-
-  for (const item of response.output ?? []) {
-    for (const contentItem of item.content ?? []) {
-      if (contentItem.type === 'output_text' && typeof contentItem.text === 'string' && contentItem.text.trim()) {
-        return contentItem.text;
-      }
-    }
-  }
-
-  return '';
+  return response.candidates?.[0]?.content?.parts
+    ?.map((part) => (typeof part.text === 'string' ? part.text : ''))
+    .join('')
+    .trim() ?? '';
 }
 
 function normalizeProjectId(rawProjectId: unknown) {
@@ -368,7 +356,7 @@ function isWeakTodoTitle(value: string) {
   return !normalized || weakTodoTitles.has(normalized) || narrativeTitlePattern.test(normalized);
 }
 
-function buildTodoDedupKey(item: OpenAiTodoItem) {
+function buildTodoDedupKey(item: GeminiTodoItem) {
   return `${normalizeTodoText(item.title).toLowerCase()}::${normalizeTodoText(item.details).toLowerCase()}`;
 }
 
@@ -382,7 +370,7 @@ function isTooSimilarToDetails(title: string, details: string) {
   return normalizedDetails.startsWith(normalizedTitle) && normalizedDetails.length - normalizedTitle.length > 40 && narrativeTitlePattern.test(normalizedTitle);
 }
 
-function isValidTodoItem(item: OpenAiTodoItem) {
+function isValidTodoItem(item: GeminiTodoItem) {
   const title = compactWhitespace(item.title);
   const details = compactWhitespace(item.details);
 
@@ -410,8 +398,8 @@ function isValidTodoItem(item: OpenAiTodoItem) {
   return true;
 }
 
-function dedupeTodoItems(items: OpenAiTodoItem[]) {
-  const deduped = new Map<string, OpenAiTodoItem>();
+function dedupeTodoItems(items: GeminiTodoItem[]) {
+  const deduped = new Map<string, GeminiTodoItem>();
 
   items.forEach((item) => {
     const cleaned = {
@@ -430,12 +418,78 @@ function dedupeTodoItems(items: OpenAiTodoItem[]) {
   return Array.from(deduped.values());
 }
 
-function extractTodoItems(rawTodoItems: unknown, legacyTodoTitles: unknown) {
+function overlapScore(left: string, right: string) {
+  const normalize = (value: string) =>
+    normalizeTodoText(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter((word) => word.length > 2 && !MATCH_STOP_WORDS.has(word));
+
+  const leftWords = new Set(normalize(left));
+  const rightWords = new Set(normalize(right));
+  let score = 0;
+
+  leftWords.forEach((word) => {
+    if (rightWords.has(word)) {
+      score += 1;
+    }
+  });
+
+  return score;
+}
+
+function matchesTodo(taskTitle: string, todoTitle: string) {
+  return overlapScore(taskTitle, todoTitle) >= 3;
+}
+
+function matchesCompletionSignal(taskTitle: string, completionSignals: string[]) {
+  return completionSignals.some((signal) => overlapScore(taskTitle, signal) >= 2);
+}
+
+function buildAnalysisSummary(input: {
+  projectChanged: boolean;
+  projectId: string;
+  tags: string[];
+  createdTodoCount: number;
+  completedTodoCount: number;
+}) {
+  const segments: string[] = [];
+
+  if (input.projectChanged) {
+    segments.push(`Moved to ${input.projectId}.`);
+  }
+  if (input.tags.length) {
+    segments.push(`Tagged with ${input.tags.slice(0, 3).join(', ')}.`);
+  }
+  if (input.createdTodoCount > 0) {
+    segments.push(`Created ${input.createdTodoCount} to-do${input.createdTodoCount === 1 ? '' : 's'}.`);
+  }
+  if (input.completedTodoCount > 0) {
+    segments.push(`Marked ${input.completedTodoCount} to-do${input.completedTodoCount === 1 ? '' : 's'} done.`);
+  }
+
+  return segments.length ? segments.join(' ') : 'Analysis completed with no major changes.';
+}
+
+function expandStructuredTodoItem(item: GeminiTodoItem) {
+  const actionableParts = splitActionableParts(item.details);
+  if (actionableParts.length <= 1) {
+    return [item];
+  }
+
+  return actionableParts.map((part) => ({
+    title: buildCompactTodoTitle(part),
+    details: normalizeTodoText(part),
+  }));
+}
+
+function extractTodoItems(rawTodoItems: unknown) {
   const structuredItems = Array.isArray(rawTodoItems)
     ? rawTodoItems
-        .map((item) => {
+        .flatMap((item) => {
           if (!item || typeof item !== 'object') {
-            return null;
+            return [];
           }
 
           const todo = item as { title?: unknown; details?: unknown };
@@ -448,33 +502,19 @@ function extractTodoItems(rawTodoItems: unknown, legacyTodoTitles: unknown) {
               : buildCompactTodoTitle(resolvedDetails);
 
           if (!resolvedTitle || !resolvedDetails) {
-            return null;
+            return [];
           }
 
-          return {
+          const baseItem = {
             title: resolvedTitle,
             details: resolvedDetails,
-          } satisfies OpenAiTodoItem;
+          } satisfies GeminiTodoItem;
+
+          return expandStructuredTodoItem(baseItem);
         })
-        .filter((item): item is OpenAiTodoItem => Boolean(item))
     : [];
 
-  if (structuredItems.length) {
-    return dedupeTodoItems(structuredItems).filter(isValidTodoItem).slice(0, 8);
-  }
-
-  const fallbackTitles = Array.isArray(legacyTodoTitles)
-    ? legacyTodoTitles.filter((value): value is string => typeof value === 'string')
-    : [];
-
-  const fallbackItems = fallbackTitles.flatMap((value) =>
-    splitActionableParts(value).map((part) => ({
-      title: buildCompactTodoTitle(part),
-      details: normalizeTodoText(part),
-    })),
-  );
-
-  return dedupeTodoItems(fallbackItems).filter(isValidTodoItem).slice(0, 8);
+  return dedupeTodoItems(structuredItems).filter(isValidTodoItem).slice(0, 8);
 }
 
 function isLikelyInformationalOnly(content: string) {
@@ -495,13 +535,11 @@ function sanitizeResult(input: {
     projectId?: unknown;
     tags?: unknown;
     todoItems?: unknown;
-    todoTitles?: unknown;
     completedSignals?: unknown;
   };
-  fallbackProjectId: string;
   prompt: string;
   noteContent: string;
-}): OpenAiNoteAnalysisResult {
+}): GeminiNoteAnalysisResult {
   if (isLikelyInformationalOnly(input.noteContent)) {
     return {
       suggestedProjectId: '',
@@ -530,7 +568,7 @@ function sanitizeResult(input: {
       ).slice(0, 8)
     : [];
   const completedSet = new Set(completedSignals.map((value) => normalizeTodoText(value).toLowerCase()));
-  const todoItems = extractTodoItems(input.raw.todoItems, input.raw.todoTitles).filter(
+  const todoItems = extractTodoItems(input.raw.todoItems).filter(
     (item) => !completedSet.has(normalizeTodoText(item.details).toLowerCase()) && !completedSet.has(normalizeTodoText(item.title).toLowerCase()),
   );
 
@@ -543,70 +581,67 @@ function sanitizeResult(input: {
   };
 }
 
-export function hasOpenAiNoteAnalysisConfig() {
-  return Boolean(env.OPENAI_API_KEY);
+export function hasGeminiNoteAnalysisConfig() {
+  return Boolean(env.GEMINI_API_KEY);
 }
 
-export async function analyzeNoteWithOpenAI(input: OpenAiNoteAnalysisInput) {
-  if (!env.OPENAI_API_KEY) {
+export async function analyzeNoteWithGemini(input: GeminiNoteAnalysisInput) {
+  if (!env.GEMINI_API_KEY) {
+    logger.debug('Skipping Gemini note analysis because GEMINI_API_KEY is not configured');
     return null;
   }
 
   const prompt = buildPrompt(input);
-  const response = await fetch(`${env.OPENAI_BASE_URL}/responses`, {
+  logger.info(
+    {
+      model: env.GEMINI_MODEL,
+      baseUrl: env.GEMINI_BASE_URL,
+      fallbackProjectId: input.fallbackProjectId || '',
+      contentLength: input.content.length,
+      recentNotesCount: input.recentProjectNotes.length,
+    },
+    'Gemini note analysis started'
+  );
+
+  const response = await fetch(`${env.GEMINI_BASE_URL}/models/${env.GEMINI_MODEL}:generateContent`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+      'x-goog-api-key': env.GEMINI_API_KEY,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: env.OPENAI_MODEL,
-      instructions: 'Return valid JSON matching the schema exactly. Do not include markdown, prose, or extra fields.',
-      input: prompt,
-      store: false,
-      text: {
-        format: {
-          type: 'json_schema',
-          name: 'note_analysis',
-          strict: true,
-          schema: responseSchema,
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: prompt }],
         },
+      ],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseJsonSchema: responseSchema,
       },
     }),
   });
 
+  logger.info(
+    {
+      status: response.status,
+      ok: response.ok,
+      model: env.GEMINI_MODEL,
+    },
+    'Gemini note analysis response received'
+  );
+
   if (!response.ok) {
     const errorBody = await response.text();
-    logger.warn(
-      {
-        status: response.status,
-        body: errorBody,
-      },
-      'OpenAI note analysis request failed'
-    );
+    logger.warn({ status: response.status, body: errorBody }, 'Gemini note analysis request failed');
     return null;
   }
 
   const payload = (await response.json()) as unknown;
-  const parsedOutput = extractParsedOutput(payload);
-  if (parsedOutput) {
-    return sanitizeResult({
-      raw: parsedOutput as {
-        projectId?: unknown;
-        tags?: unknown;
-        todoItems?: unknown;
-        todoTitles?: unknown;
-        completedSignals?: unknown;
-      },
-      fallbackProjectId: input.fallbackProjectId,
-      prompt,
-      noteContent: input.content,
-    });
-  }
-
-  const outputText = extractOutputText(payload);
+  const outputText = extractTextFromGeminiResponse(payload);
   if (!outputText) {
-    logger.warn('OpenAI note analysis returned no structured output text');
+    logger.warn({ payload }, 'Gemini note analysis returned no text output');
     return null;
   }
 
@@ -615,18 +650,249 @@ export async function analyzeNoteWithOpenAI(input: OpenAiNoteAnalysisInput) {
       projectId?: unknown;
       tags?: unknown;
       todoItems?: unknown;
-      todoTitles?: unknown;
       completedSignals?: unknown;
     };
-
-    return sanitizeResult({
+    const result = sanitizeResult({
       raw: parsed,
-      fallbackProjectId: input.fallbackProjectId,
       prompt,
       noteContent: input.content,
     });
+    logger.info(
+      {
+        provider: 'gemini',
+        suggestedProjectId: result.suggestedProjectId,
+        tagCount: result.tags.length,
+        todoCount: result.todoItems.length,
+        completedSignalCount: result.completedSignals.length,
+      },
+      'Gemini note analysis result accepted'
+    );
+    return result;
   } catch (error) {
-    logger.warn({ err: error, outputText }, 'Failed to parse OpenAI note analysis output');
+    logger.warn({ err: error, outputText }, 'Failed to parse Gemini note analysis output');
     return null;
   }
+}
+
+async function processNoteAnalysis(noteId: string, userId: Types.ObjectId) {
+  if (!hasGeminiNoteAnalysisConfig()) {
+    return;
+  }
+
+  const settings = await SettingsModel.findOne({ userId }).lean();
+  const note = await NoteModel.findOne({ _id: noteId, userId });
+  if (!note) {
+    return;
+  }
+
+  const recentContextNotes = await NoteModel.find({
+    userId,
+    projectId: note.projectId,
+    _id: { $ne: note._id },
+    createdAt: { $gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7) },
+  })
+    .sort({ createdAt: -1 })
+    .limit(8)
+    .lean();
+
+  const analysis = await analyzeNoteWithGemini({
+    content: note.content,
+    fallbackProjectId: note.projectId,
+    recentProjectNotes: recentContextNotes.map((item) => item.content),
+  });
+
+  if (!analysis) {
+    note.analysis = {
+      status: 'failed',
+      summary: 'Gemini analysis returned no usable result.',
+      lastAnalyzedAt: new Date(),
+    };
+    await note.save();
+    publishNoteAnalysisUpdate({
+      userId: userId.toString(),
+      note,
+      tasks: [],
+    });
+    return;
+  }
+
+  logger.debug(
+    {
+      noteId,
+      userId: userId.toString(),
+      providerConfigured: hasGeminiNoteAnalysisConfig(),
+      prompt: analysis.prompt,
+      suggestedProjectId: analysis.suggestedProjectId,
+      tags: analysis.tags,
+      todoTitles: analysis.todoItems.map((item) => item.title),
+      todoItems: analysis.todoItems,
+      completedSignals: analysis.completedSignals,
+    },
+    'Background Gemini note analysis completed'
+  );
+
+  const previousProjectId = note.projectId;
+  if (settings?.aiTaggingEnabled !== false) {
+    note.tags = analysis.tags;
+  }
+  note.projectId = analysis.suggestedProjectId;
+  let createdTodoCount = 0;
+  let completedTodoCount = 0;
+  const touchedTaskIds = new Set<string>();
+
+  const statuses = await ensureTaskStatuses(userId);
+  const todoStatusId = statuses.find((status) => status.id === 'todo')?.id ?? statuses[0]?.id ?? 'draft';
+  await ensureTaskStatus(userId, 'done');
+
+  const projectTasks = await TaskModel.find({
+    userId,
+    projectId: note.projectId,
+    deletedAt: null,
+  }).sort({ createdAt: -1 });
+
+  if (settings?.taskExtractionEnabled !== false) {
+    for (const todoItem of analysis.todoItems) {
+      const taskTitle = compactWhitespace(todoItem.title) || buildCompactTodoTitle(todoItem.details);
+      const taskDescription = compactWhitespace(todoItem.details) || normalizeTodoText(todoItem.title);
+      const existingTask = projectTasks.find((task) => matchesTodo(`${task.title} ${task.description ?? ''}`.trim(), taskDescription));
+
+      if (existingTask) {
+        logger.info(
+          {
+            noteId,
+            matchedTaskId: existingTask.id,
+            matchedTaskTitle: existingTask.title,
+            incomingTaskTitle: taskTitle,
+            incomingTaskDescription: taskDescription,
+          },
+          'Reused existing Gemini AI task instead of creating a new one'
+        );
+        existingTask.evidenceNoteIds = uniqueStrings([...(existingTask.evidenceNoteIds ?? []), note.id]);
+        if (!existingTask.noteId) {
+          existingTask.noteId = note.id;
+        }
+        await existingTask.save();
+        touchedTaskIds.add(existingTask.id);
+        continue;
+      }
+
+      const order = await TaskModel.countDocuments({ userId, statusId: todoStatusId });
+      const createdTask = await TaskModel.create({
+        userId,
+        title: taskTitle,
+        description: taskDescription,
+        statusId: todoStatusId,
+        projectId: note.projectId,
+        noteId: note.id,
+        evidenceNoteIds: [note.id],
+        source: 'note_ai',
+        tags: analysis.tags,
+        order,
+      });
+      logger.info(
+        {
+          noteId,
+          createdTaskId: createdTask.id,
+          createdTaskTitle: createdTask.title,
+          createdTaskDescription: createdTask.description,
+        },
+        'Created new Gemini AI task from note analysis'
+      );
+      projectTasks.unshift(createdTask);
+      touchedTaskIds.add(createdTask.id);
+      createdTodoCount += 1;
+    }
+  }
+
+  if (analysis.completedSignals.length) {
+    const doneStatus = await ensureTaskStatus(userId, 'done');
+    if (!doneStatus) {
+      return;
+    }
+
+    for (const task of projectTasks) {
+      if (task.statusId === doneStatus.id) {
+        continue;
+      }
+
+      if (!matchesCompletionSignal(`${task.title} ${task.description ?? ''}`.trim(), analysis.completedSignals)) {
+        continue;
+      }
+
+      task.statusId = doneStatus.id;
+      task.projectId = note.projectId;
+      task.evidenceNoteIds = uniqueStrings([...(task.evidenceNoteIds ?? []), note.id]);
+      await task.save();
+      touchedTaskIds.add(task.id);
+      completedTodoCount += 1;
+    }
+  }
+
+  note.analysis = {
+    status: 'completed',
+    summary: buildAnalysisSummary({
+      projectChanged: previousProjectId !== note.projectId,
+      projectId: note.projectId,
+      tags: note.tags,
+      createdTodoCount,
+      completedTodoCount,
+    }),
+    lastAnalyzedAt: new Date(),
+  };
+  await note.save();
+
+  const touchedTasks = touchedTaskIds.size
+    ? await TaskModel.find({
+        _id: { $in: Array.from(touchedTaskIds) },
+        userId,
+      })
+    : [];
+
+  publishNoteAnalysisUpdate({
+    userId: userId.toString(),
+    note,
+    tasks: touchedTasks,
+  });
+}
+
+export function queueNoteAnalysis(noteId: string, userId: Types.ObjectId) {
+  if (!hasGeminiNoteAnalysisConfig()) {
+    return;
+  }
+
+  const jobId = `${userId.toString()}:${noteId}`;
+  if (runningJobs.has(jobId)) {
+    return;
+  }
+
+  runningJobs.add(jobId);
+  setTimeout(async () => {
+    try {
+      await processNoteAnalysis(noteId, userId);
+    } catch (error) {
+      const failedNote = await NoteModel.findOneAndUpdate(
+        { _id: noteId, userId },
+        {
+          $set: {
+            analysis: {
+              status: 'failed',
+              summary: 'Gemini analysis failed. You can keep working while we retry later.',
+              lastAnalyzedAt: new Date(),
+            },
+          },
+        },
+        { new: true },
+      );
+      if (failedNote) {
+        publishNoteAnalysisUpdate({
+          userId: userId.toString(),
+          note: failedNote,
+          tasks: [],
+        });
+      }
+      logger.error({ err: error, noteId, userId: userId.toString() }, 'Background Gemini note analysis failed');
+    } finally {
+      runningJobs.delete(jobId);
+    }
+  }, 0);
 }
