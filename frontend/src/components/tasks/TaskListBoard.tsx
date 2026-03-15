@@ -79,7 +79,7 @@ export function TaskListBoard({
                   </div>
                 </div>
                 <div
-                  className="space-y-3 rounded-[28px] border border-white/70 bg-white/40 p-3 backdrop-blur-sm transition hover:border-primary/30 hover:bg-white/55"
+                  className="space-y-3 rounded-[28px] border border-white/70 bg-white/40 p-3 backdrop-blur-sm"
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={() => handleDrop(status.id, statusTasks.length)}
                 >

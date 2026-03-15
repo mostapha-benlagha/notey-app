@@ -20,6 +20,7 @@ describe("useTasksStore", () => {
           statusId: "done",
           projectId: "work",
           noteId: "note1",
+          evidenceNoteIds: ["note1"],
           source: "note_ai",
           tags: ["meeting", "security"],
           order: 0,

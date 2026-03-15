@@ -11,6 +11,12 @@ export interface NoteAttachment {
   file?: File;
 }
 
+export interface NoteAnalysis {
+  status: "idle" | "pending" | "completed" | "failed";
+  summary: string;
+  lastAnalyzedAt: string | null;
+}
+
 export interface Note {
   id: string;
   content: string;
@@ -19,4 +25,5 @@ export interface Note {
   tags: string[];
   createdAt: string;
   attachments: NoteAttachment[];
+  analysis: NoteAnalysis;
 }

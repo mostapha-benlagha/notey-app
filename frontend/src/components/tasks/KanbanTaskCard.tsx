@@ -31,7 +31,7 @@ export function KanbanTaskCard({
   return (
     <Card
       draggable={draggable}
-      className="rounded-[28px] border-white/85 bg-white/95 p-4 transition hover:-translate-y-0.5"
+      className="rounded-[28px] border-white/85 bg-white/95 p-4"
       onClick={onOpen}
     >
       <div className="flex items-start justify-between gap-3">

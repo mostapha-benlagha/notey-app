@@ -73,6 +73,22 @@ const noteSchema = new Schema(
       type: [noteAttachmentSchema],
       default: [],
     },
+    analysis: {
+      status: {
+        type: String,
+        enum: ['idle', 'pending', 'completed', 'failed'],
+        default: 'idle',
+      },
+      summary: {
+        type: String,
+        default: '',
+        trim: true,
+      },
+      lastAnalyzedAt: {
+        type: Date,
+        default: null,
+      },
+    },
   },
   {
     timestamps: true,

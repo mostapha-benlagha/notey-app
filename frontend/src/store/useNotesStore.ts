@@ -4,7 +4,7 @@ import { createNote as createNoteRequest, deleteNote as deleteNoteRequest, fetch
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTasksStore } from "@/store/useTasksStore";
 import type { Note, NoteAttachment } from "@/types/note.types";
-import { extractTasks, generateTags } from "@/utils/tagGenerator";
+import { generateTags } from "@/utils/tagGenerator";
 import { htmlToPlainText, plainTextToHtml, summarizeNoteContent } from "@/utils/noteContent";
 
 interface AddNoteInput {
@@ -31,6 +31,7 @@ interface NotesState {
   updateNote: (input: UpdateNoteInput) => Promise<Note | null>;
   setNoteProjectLink: (noteId: string, projectId: string) => Promise<Note | null>;
   deleteNote: (noteId: string) => Promise<void>;
+  applyServerNote: (note: Note) => void;
   getNoteById: (noteId: string) => Note | undefined;
   filterByProject: (projectId?: string | null) => Note[];
   setSearchTerm: (term: string) => void;
@@ -58,7 +59,6 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       searchTerm: "",
     }),
   addNote: async (input) => {
-    const { aiTaggingEnabled, taskExtractionEnabled } = useSettingsStore.getState();
     const richContent = input.richContent?.trim() || plainTextToHtml(input.content);
     const plainText = summarizeNoteContent(htmlToPlainText(richContent));
 
@@ -69,23 +69,13 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       projectId: input.projectId,
     });
 
-    const tags = aiTaggingEnabled ? generateTags(parsed.content) : [];
     const note = await createNoteRequest({
       attachments: parsed.attachments,
       content: parsed.content,
       projectId: parsed.projectId,
       richContent: parsed.richContent,
-      tags,
+      tags: [],
     });
-
-    const taskTitles = taskExtractionEnabled ? extractTasks(parsed.content) : [];
-    if (taskTitles.length) {
-      await useTasksStore.getState().createExtractedTasks({
-        noteId: note.id,
-        projectId: note.projectId,
-        titles: taskTitles,
-      });
-    }
 
     set((state) => ({
       notes: [note, ...state.notes.filter((existing) => existing.id !== note.id)],
@@ -152,6 +142,12 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       notes: state.notes.filter((note) => note.id !== noteId),
     }));
   },
+  applyServerNote: (note) =>
+    set((state) => ({
+      notes: [note, ...state.notes.filter((existing) => existing.id !== note.id)].sort(
+        (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+      ),
+    })),
   getNoteById: (noteId) => get().notes.find((note) => note.id === noteId),
   filterByProject: (projectId) =>
     get().notes.filter((note) => !projectId || note.projectId === projectId),

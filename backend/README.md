@@ -23,6 +23,12 @@ Base backend scaffold for the Notey application.
 
 Copy `.env.example` to `.env` and update the values before connecting MongoDB and MinIO.
 
+For AI-powered note analysis, also set:
+
+- `OPENAI_API_KEY` with your OpenAI API key
+- `OPENAI_MODEL` if you want to override the default analysis model
+- `OPENAI_BASE_URL` only if you need a non-default API base URL
+
 ## Docker
 
 Docker Compose starts:

@@ -14,6 +14,7 @@ import {
   verifyTwoFactor,
 } from "@/services/api";
 import { useNotesStore } from "@/store/useNotesStore";
+import { useNotificationsStore } from "@/store/useNotificationsStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTasksStore } from "@/store/useTasksStore";
 import type { User } from "@/types/user.types";
@@ -89,6 +90,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       setStoredToken(null);
       useNotesStore.getState().clear();
       useTasksStore.getState().clear();
+      useNotificationsStore.getState().clear();
       useSettingsStore.getState().clear();
       set({ isAuthenticated: false, user: null, pendingTwoFactorChallenge: null, isHydrating: false });
     }
@@ -219,6 +221,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     setStoredToken(null);
     useNotesStore.getState().clear();
     useTasksStore.getState().clear();
+    useNotificationsStore.getState().clear();
     useSettingsStore.getState().clear();
     set({ isAuthenticated: false, user: null, pendingTwoFactorChallenge: null, isHydrating: false, isSubmitting: false });
   },
@@ -239,6 +242,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       setStoredToken(null);
       useNotesStore.getState().clear();
       useTasksStore.getState().clear();
+      useNotificationsStore.getState().clear();
       useSettingsStore.getState().clear();
       set({ isAuthenticated: false, user: null, pendingTwoFactorChallenge: null, isHydrating: false, isSubmitting: false });
     } catch (error) {

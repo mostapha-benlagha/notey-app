@@ -10,6 +10,12 @@ export const noteAttachmentSchema = z.object({
   mimeType: z.string().min(1).optional(),
 });
 
+export const noteAnalysisSchema = z.object({
+  status: z.enum(["idle", "pending", "completed", "failed"]),
+  summary: z.string(),
+  lastAnalyzedAt: z.string().nullable(),
+});
+
 export const noteSchema = z.object({
   id: z.string(),
   content: z.string().min(1),
@@ -18,6 +24,7 @@ export const noteSchema = z.object({
   tags: z.array(z.string()),
   createdAt: z.string().min(1),
   attachments: z.array(noteAttachmentSchema),
+  analysis: noteAnalysisSchema,
 });
 
 export const createNoteSchema = z.object({

@@ -29,6 +29,7 @@ interface TasksState {
   addTask: (input: CreateManualTaskInput) => Promise<Task>;
   createExtractedTasks: (input: { noteId: string; projectId: string; titles: string[] }) => Promise<Task[]>;
   handleNoteDeleted: (noteId: string) => void;
+  applyServerTasks: (tasks: Task[]) => void;
   createStatus: (label: string, colorClass?: string) => Promise<TaskStatus | null>;
   saveStatuses: (statuses: TaskStatus[]) => Promise<void>;
   moveTask: (taskId: string, statusId: string, position: number) => Promise<void>;
@@ -110,6 +111,29 @@ export const useTasksStore = create<TasksState>((set, get) => ({
         .filter((task) => !(task.noteId === noteId && task.source === "note_ai"))
         .map((task) => (task.noteId === noteId && task.source === "manual" ? { ...task, noteId: null } : task)),
     })),
+  applyServerTasks: (tasks) => {
+    if (!tasks.length) {
+      return;
+    }
+
+    set((state) => {
+      const incomingById = new Map(tasks.map((task) => [task.id, task]));
+      const nextTasks = [
+        ...state.tasks.map((task) => incomingById.get(task.id) ?? task),
+        ...tasks.filter((task) => !state.tasks.some((existing) => existing.id === task.id)),
+      ];
+
+      return {
+        tasks: nextTasks.sort((left, right) => {
+          if (left.statusId === right.statusId) {
+            return left.order - right.order;
+          }
+
+          return left.statusId.localeCompare(right.statusId);
+        }),
+      };
+    });
+  },
   createStatus: async (label, colorClass = "bg-violet-100 text-violet-700") => {
     const normalized = label.trim();
     if (!normalized) {

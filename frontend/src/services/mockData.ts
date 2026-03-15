@@ -39,6 +39,11 @@ export const mockNotes: Note[] = [
     tags: ["meeting", "security", "task"],
     createdAt: "2026-03-11T10:00:00.000Z",
     attachments: [{ id: "attachment1", name: "threat-model.png", kind: "image", sizeLabel: "1.2 MB" }],
+    analysis: {
+      status: "completed",
+      summary: "Tagged with meeting, security, task. Created 2 to-dos.",
+      lastAnalyzedAt: "2026-03-11T10:02:00.000Z",
+    },
   },
   {
     id: "note2",
@@ -49,6 +54,11 @@ export const mockNotes: Note[] = [
     tags: ["product", "research", "task"],
     createdAt: "2026-03-11T12:30:00.000Z",
     attachments: [{ id: "attachment2", name: "activation-brief.pdf", kind: "file", sizeLabel: "340 KB" }],
+    analysis: {
+      status: "completed",
+      summary: "Tagged with product, research, task. Created 1 to-do.",
+      lastAnalyzedAt: "2026-03-11T12:32:00.000Z",
+    },
   },
   {
     id: "note3",
@@ -59,6 +69,11 @@ export const mockNotes: Note[] = [
     tags: ["research", "insight"],
     createdAt: "2026-03-11T15:45:00.000Z",
     attachments: [],
+    analysis: {
+      status: "completed",
+      summary: "Tagged with research, insight.",
+      lastAnalyzedAt: "2026-03-11T15:47:00.000Z",
+    },
   },
 ];
 
@@ -70,6 +85,7 @@ export const mockTasks: Task[] = [
     statusId: "draft",
     projectId: "work",
     noteId: "note1",
+    evidenceNoteIds: ["note1"],
     source: "note_ai",
     tags: ["meeting", "security"],
     order: 0,
@@ -82,6 +98,7 @@ export const mockTasks: Task[] = [
     statusId: "in-progress",
     projectId: "work",
     noteId: "note1",
+    evidenceNoteIds: ["note1"],
     source: "note_ai",
     tags: ["ops", "follow-up"],
     order: 0,
@@ -94,6 +111,7 @@ export const mockTasks: Task[] = [
     statusId: "done",
     projectId: "startup",
     noteId: "note2",
+    evidenceNoteIds: ["note2"],
     source: "note_ai",
     tags: ["beta", "product"],
     order: 0,

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { uploadNoteAttachments } from "@/services/api";
 import { useNotesStore } from "@/store/useNotesStore";
+import { useNotificationsStore } from "@/store/useNotificationsStore";
 import type { NoteAttachment } from "@/types/note.types";
 import { audioBlobToAttachment, toAttachment } from "@/utils/attachments";
 import { plainTextToHtml } from "@/utils/noteContent";
@@ -28,6 +29,7 @@ export function NoteEditorPage() {
   const addNote = useNotesStore((state) => state.addNote);
   const updateNote = useNotesStore((state) => state.updateNote);
   const getNoteById = useNotesStore((state) => state.getNoteById);
+  const markNoteSeen = useNotificationsStore((state) => state.markNoteSeen);
   const existingNote = id ? getNoteById(id) : undefined;
   const isNew = !id;
 
@@ -55,6 +57,12 @@ export function NoteEditorPage() {
     setAttachments(initialAttachments);
     setContent(initialHtml);
   }, [initialAttachments, initialHtml, initialProjectId]);
+
+  useEffect(() => {
+    if (id) {
+      markNoteSeen(id);
+    }
+  }, [id, markNoteSeen]);
 
   const handleFileSelect = (files: FileList | null) => {
     if (!files?.length) {

@@ -15,6 +15,7 @@ export interface Task {
   statusId: TaskStatusId;
   projectId: string;
   noteId: string | null;
+  evidenceNoteIds: string[];
   source: TaskSource;
   tags: string[];
   order: number;

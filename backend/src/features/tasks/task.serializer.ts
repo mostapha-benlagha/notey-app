@@ -12,6 +12,7 @@ export function serializeTask(task: SerializableTask) {
     statusId: task.statusId,
     projectId: task.projectId,
     noteId: task.noteId ?? null,
+    evidenceNoteIds: Array.isArray(task.evidenceNoteIds) ? task.evidenceNoteIds : [],
     source: task.source ?? 'manual',
     tags: Array.isArray(task.tags) ? task.tags : [],
     order: typeof task.order === 'number' ? task.order : 0,

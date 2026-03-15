@@ -37,7 +37,7 @@ export function MessageBubble({
       <div className="flex gap-4">
         <Avatar label={project?.name ?? "NT"} />
         <Card
-          className="flex-1 cursor-pointer rounded-[28px] bg-white/90 p-5 transition hover:-translate-y-0.5 hover:bg-white"
+          className="flex-1 cursor-pointer rounded-[28px] bg-white/90 p-5"
           onClick={() => onOpen(note.id)}
         >
           <div className="flex items-start justify-between gap-4">

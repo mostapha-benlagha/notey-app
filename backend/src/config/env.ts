@@ -26,6 +26,9 @@ const envSchema = z.object({
   SMTP_USER: z.string().min(1).optional(),
   SMTP_PASS: z.string().min(1).optional(),
   SMTP_FROM: z.string().min(1).optional(),
+  OPENAI_API_KEY: z.string().min(1).optional(),
+  OPENAI_MODEL: z.string().min(1).default('gpt-4.1-mini'),
+  OPENAI_BASE_URL: z.string().url().default('https://api.openai.com/v1'),
 });
 
 const parsed = envSchema.safeParse(process.env);

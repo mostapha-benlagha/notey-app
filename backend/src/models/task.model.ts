@@ -43,6 +43,10 @@ const taskSchema = new Schema(
       type: [String],
       default: [],
     },
+    evidenceNoteIds: {
+      type: [String],
+      default: [],
+    },
     order: {
       type: Number,
       required: true,

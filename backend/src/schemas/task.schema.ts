@@ -9,6 +9,7 @@ export const taskSchema = z.object({
   statusId: z.string().min(1),
   projectId: z.string().min(1),
   noteId: z.string().nullable(),
+  evidenceNoteIds: z.array(z.string()),
   source: taskSourceSchema,
   tags: z.array(z.string()),
   order: z.number().int().nonnegative(),

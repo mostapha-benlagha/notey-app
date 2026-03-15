@@ -8,6 +8,8 @@ const defaultTaskStatuses = [
   { id: 'done', label: 'Done', colorClass: 'bg-emerald-100 text-emerald-700', kind: 'system' as const },
 ];
 
+export { defaultTaskStatuses };
+
 export async function ensureTaskStatuses(userId: Types.ObjectId) {
   const existing = await TaskStatusModel.find({ userId }).sort({ order: 1 }).lean();
 
@@ -24,4 +26,25 @@ export async function ensureTaskStatuses(userId: Types.ObjectId) {
   );
 
   return TaskStatusModel.find({ userId }).sort({ order: 1 }).lean();
+}
+
+export async function ensureTaskStatus(userId: Types.ObjectId, statusId: string) {
+  const existing = await TaskStatusModel.findOne({ userId, id: statusId }).lean();
+  if (existing) {
+    return existing;
+  }
+
+  const fallback = defaultTaskStatuses.find((status) => status.id === statusId);
+  if (!fallback) {
+    throw new Error(`Unknown task status: ${statusId}`);
+  }
+
+  const order = await TaskStatusModel.countDocuments({ userId });
+  await TaskStatusModel.create({
+    ...fallback,
+    userId,
+    order,
+  });
+
+  return TaskStatusModel.findOne({ userId, id: statusId }).lean();
 }

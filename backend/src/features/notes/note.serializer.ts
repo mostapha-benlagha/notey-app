@@ -11,5 +11,10 @@ export function serializeNote(note: SerializableNote) {
     tags: note.tags,
     attachments: note.attachments,
     createdAt: note.createdAt.toISOString(),
+    analysis: {
+      status: note.analysis?.status ?? 'idle',
+      summary: note.analysis?.summary ?? '',
+      lastAnalyzedAt: note.analysis?.lastAnalyzedAt ? note.analysis.lastAnalyzedAt.toISOString() : null,
+    },
   };
 }
