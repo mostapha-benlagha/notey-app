@@ -3,8 +3,7 @@ import { env } from '../config/env.js';
 import { logger } from '../config/logger.js';
 
 const smtpConfigured = Boolean(env.SMTP_HOST && env.SMTP_PORT && env.SMTP_USER && env.SMTP_PASS && env.SMTP_FROM);
-const brandIconUrl = `${env.CLIENT_URL}/icons/notey-app-icon.png`;
-const brandLogoUrl = `${env.CLIENT_URL}/icons/notey-logo-with-name.svg`;
+const driveLogoUrl = 'https://drive.google.com/uc?export=view&id=1E0RuweJagDoavI3esnOICMCB4BJZvwjD';
 
 const transporter = smtpConfigured
   ? nodemailer.createTransport({
@@ -18,6 +17,14 @@ const transporter = smtpConfigured
     })
   : null;
 
+function renderTag(label: string) {
+  return `
+    <span style="display:inline-block;border-radius:999px;border:1px solid #d6e0ee;background:#f7faff;padding:6px 10px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#5b667a;">
+      ${escapeHtml(label)}
+    </span>
+  `;
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll('&', '&amp;')
@@ -28,40 +35,31 @@ function escapeHtml(value: string) {
 }
 
 function renderEmailShell(input: {
-  eyebrow: string;
   title: string;
-  intro: string;
+  intro?: string;
+  tags: string[];
   bodyHtml: string;
-  helpText: string;
+  supportText: string;
 }) {
   return `
-    <div style="margin:0;background:#eef4fb;padding:32px 16px;font-family:Arial,sans-serif;color:#162033;">
-      <div style="margin:0 auto;max-width:640px;overflow:hidden;border-radius:28px;background:#ffffff;box-shadow:0 20px 50px rgba(22,32,51,0.12);">
-        <div style="background:linear-gradient(135deg,#0f4f9f 0%,#1663c7 55%,#3e8cff 100%);padding:28px 28px 72px;">
-          <div style="display:flex;align-items:center;gap:14px;">
-            <img src="${brandIconUrl}" alt="Notey icon" width="52" height="52" style="display:block;border-radius:18px;background:rgba(255,255,255,0.16);padding:8px;" />
-            <img src="${brandLogoUrl}" alt="Notey" height="30" style="display:block;max-width:180px;" />
-          </div>
-          <div style="margin-top:28px;display:inline-block;border-radius:999px;background:rgba(255,255,255,0.14);padding:8px 14px;font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#dceaff;">
-            ${escapeHtml(input.eyebrow)}
-          </div>
-          <h1 style="margin:18px 0 0;font-size:32px;line-height:1.15;font-weight:800;color:#ffffff;">
-            ${escapeHtml(input.title)}
-          </h1>
-          <p style="margin:16px 0 0;max-width:470px;font-size:16px;line-height:1.8;color:rgba(255,255,255,0.88);">
-            ${escapeHtml(input.intro)}
-          </p>
+    <div style="margin:0;padding:24px 16px;font-family:Arial,sans-serif;color:#162033;background:#ffffff;">
+      <div style="margin:0 auto;max-width:560px;">
+        <img src="${driveLogoUrl}" alt="Notey" style="display:block;max-width:180px;height:auto;margin:0 0 20px;" />
+        <div style="margin:0 0 14px;display:flex;flex-wrap:wrap;gap:8px;">
+          ${input.tags.map((tag) => renderTag(tag)).join('')}
         </div>
-        <div style="margin-top:-44px;padding:0 28px 28px;">
-          <div style="border-radius:28px;background:#ffffff;padding:28px;box-shadow:0 14px 34px rgba(22,32,51,0.09);">
-            ${input.bodyHtml}
-          </div>
-          <div style="margin-top:18px;border-radius:24px;background:#f5f8fc;padding:18px 20px;">
-            <p style="margin:0;font-size:13px;line-height:1.8;color:#5b667a;">
-              ${escapeHtml(input.helpText)}
-            </p>
-          </div>
-        </div>
+        <p style="margin:0 0 10px;font-size:22px;line-height:1.3;font-weight:700;color:#162033;">
+          ${escapeHtml(input.title)}
+        </p>
+        ${
+          input.intro
+            ? `<p style="margin:0 0 16px;font-size:14px;line-height:1.8;color:#445065;">${escapeHtml(input.intro)}</p>`
+            : ''
+        }
+        ${input.bodyHtml}
+        <p style="margin:18px 0 0;font-size:12px;line-height:1.8;color:#6a778d;">
+          ${escapeHtml(input.supportText)}
+        </p>
       </div>
     </div>
   `;
@@ -71,7 +69,7 @@ function renderButton(label: string, href: string) {
   return `
     <a
       href="${href}"
-      style="display:inline-block;border-radius:16px;background:#1663c7;padding:14px 22px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;"
+      style="display:inline-block;border-radius:12px;background:#1663c7;padding:12px 18px;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;"
     >
       ${escapeHtml(label)}
     </a>
@@ -80,15 +78,12 @@ function renderButton(label: string, href: string) {
 
 function renderCopyFriendlyBlock(label: string, value: string) {
   return `
-    <div style="margin-top:22px;border-radius:20px;border:1px solid #d9e4f3;background:#f8fbff;padding:18px;">
-      <p style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#5b667a;">
+    <div style="margin-top:14px;padding:12px 14px;border:1px solid #d9e4f3;background:#fafcff;">
+      <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#5b667a;">
         ${escapeHtml(label)}
       </p>
-      <p style="margin:0;word-break:break-word;font-size:14px;line-height:1.8;color:#162033;font-family:'Courier New',monospace;">
+      <p style="margin:0;word-break:break-word;font-size:14px;line-height:1.7;color:#162033;font-family:'Courier New',monospace;">
         ${escapeHtml(value)}
-      </p>
-      <p style="margin:10px 0 0;font-size:12px;line-height:1.7;color:#6a778d;">
-        Most email clients do not allow real clipboard buttons, so this section is formatted to be easy to copy or long-press.
       </p>
     </div>
   `;
@@ -120,23 +115,18 @@ export async function sendEmailVerificationEmail(input: {
       'If you did not create this account, you can safely ignore this email.',
     ].join('\n'),
     html: renderEmailShell({
-      eyebrow: 'Email verification',
-      title: 'Finish setting up your Notey workspace',
-      intro: `Hi ${input.firstName}, you are one step away from using Notey fully. Verify your email to activate your workspace and keep your account secure.`,
+      title: 'Verify your email',
+      intro: `Hi ${input.firstName}, confirm your email to finish setting up your Notey account.`,
+      tags: ['Email verification', '24 hours'],
       bodyHtml: `
-        <p style="margin:0 0 18px;font-size:15px;line-height:1.9;color:#314056;">
-          Once verified, you can return to Notey and continue capturing ideas, building project context, and organizing action items without interruption.
+        <p style="margin:0 0 14px;font-size:14px;line-height:1.8;color:#314056;">
+          Use the button below to verify your address.
         </p>
         ${renderButton('Verify email', input.verificationUrl)}
-        <div style="margin-top:24px;border-radius:22px;background:#0f172a;padding:18px 20px;">
-          <p style="margin:0;font-size:13px;line-height:1.8;color:rgba(255,255,255,0.82);">
-            This verification link stays active for <strong style="color:#ffffff;">24 hours</strong>.
-          </p>
-        </div>
         ${renderCopyFriendlyBlock('Verification link', input.verificationUrl)}
       `,
-      helpText:
-        'If you did not sign up for Notey, you can ignore this email. No changes will be made unless the link is opened and confirmed.',
+      supportText:
+        'Need help? Contact support. If you did not sign up for Notey, you can ignore this email.',
     }),
   });
 
@@ -171,25 +161,25 @@ export async function sendTwoFactorCodeEmail(input: {
       'If you did not try to sign in, reset your password and review your account security.',
     ].join('\n'),
     html: renderEmailShell({
-      eyebrow: 'Secure sign-in',
-      title: 'Your Notey verification code is ready',
-      intro: `Hi ${input.firstName}, use the code below to finish your login. This extra step helps protect your workspace when two-factor authentication is turned on.`,
+      title: 'Your login code',
+      intro: `Hi ${input.firstName}, use this code to finish signing in to Notey.`,
+      tags: ['2FA', `${input.expiresInMinutes} minutes`],
       bodyHtml: `
-        <div style="border-radius:28px;background:linear-gradient(135deg,#f4f8ff 0%,#ebf3ff 100%);padding:24px;text-align:center;">
-          <p style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#5b667a;">
+        <div style="padding:16px 0;text-align:center;">
+          <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#5b667a;">
             Verification code
           </p>
-          <p style="margin:0;font-size:34px;font-weight:800;letter-spacing:0.32em;color:#0f4f9f;">
+          <p style="margin:0;font-size:30px;font-weight:800;letter-spacing:0.28em;color:#0f4f9f;">
             ${escapeHtml(groupedCode)}
           </p>
         </div>
-        <p style="margin:20px 0 0;font-size:14px;line-height:1.9;color:#314056;">
-          Enter this code in Notey to finish signing in. For your security, it expires in <strong>${input.expiresInMinutes} minutes</strong>.
+        <p style="margin:14px 0 0;font-size:14px;line-height:1.8;color:#314056;">
+          Enter this code in Notey to continue.
         </p>
         ${renderCopyFriendlyBlock('Verification code', input.code)}
       `,
-      helpText:
-        'If this login was not you, do not share the code. Change your password and review your security settings after signing in.',
+      supportText:
+        'Need help? Contact support. If this login was not you, do not share the code.',
     }),
   });
 
