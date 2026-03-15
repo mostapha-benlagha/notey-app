@@ -19,6 +19,26 @@ import type { Note } from "@/types/note.types";
 import type { Project } from "@/types/project.types";
 import type { Task, TaskStatus } from "@/types/task.types";
 
+interface TaskDetailsDialogSaveInput {
+  id: string;
+  title: string;
+  description: string;
+  projectId: string;
+  noteId: string | null;
+  statusId: string;
+  tags: string[];
+}
+
+interface TaskDetailsDialogProps {
+  open: boolean;
+  task: Task | null;
+  statuses: TaskStatus[];
+  notes: Note[];
+  projects: Project[];
+  onOpenChange: (open: boolean) => void;
+  onSave: (input: TaskDetailsDialogSaveInput) => Promise<void>;
+}
+
 export function TaskDetailsDialog({
   open,
   task,
@@ -27,23 +47,7 @@ export function TaskDetailsDialog({
   projects,
   onOpenChange,
   onSave,
-}: {
-  open: boolean;
-  task: Task | null;
-  statuses: TaskStatus[];
-  notes: Note[];
-  projects: Project[];
-  onOpenChange: (open: boolean) => void;
-  onSave: (input: {
-    id: string;
-    title: string;
-    description: string;
-    projectId: string;
-    noteId: string | null;
-    statusId: string;
-    tags: string[];
-  }) => Promise<void>;
-}) {
+}: TaskDetailsDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [projectId, setProjectId] = useState("");
