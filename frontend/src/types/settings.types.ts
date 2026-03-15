@@ -18,4 +18,5 @@ export interface Settings {
   compactBoardEnabled: boolean;
   autoOpenLastProject: boolean;
   fullWidthWorkspaceEnabled: boolean;
+  includeLinkedTodosInExports: boolean;
 }

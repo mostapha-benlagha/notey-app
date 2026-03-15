@@ -18,5 +18,6 @@ export function serializeSettings(settings: SettingsLike) {
     compactBoardEnabled: settings.compactBoardEnabled,
     autoOpenLastProject: settings.autoOpenLastProject,
     fullWidthWorkspaceEnabled: settings.fullWidthWorkspaceEnabled,
+    includeLinkedTodosInExports: settings.includeLinkedTodosInExports,
   };
 }

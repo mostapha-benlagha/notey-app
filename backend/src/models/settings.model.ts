@@ -24,6 +24,7 @@ const settingsSchema = new Schema(
     compactBoardEnabled: { type: Boolean, default: false },
     autoOpenLastProject: { type: Boolean, default: true },
     fullWidthWorkspaceEnabled: { type: Boolean, default: false },
+    includeLinkedTodosInExports: { type: Boolean, default: true },
   },
   {
     timestamps: true,

@@ -1,9 +1,19 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, FilePenLine, FolderSearch, Search } from "lucide-react";
+import { ArrowLeft, FilePenLine, FolderSearch, Search, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { NoteyLogoMark } from "@/components/brand/NoteyLogo";
 import { ProjectOverview } from "@/components/projects/ProjectOverview";
 import { TaskTrashPanel } from "@/components/tasks/TaskTrashPanel";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -31,6 +41,7 @@ export function ProjectPage() {
   const [selectedTag, setSelectedTag] = useState("all");
   const [selectedProjectFilter, setSelectedProjectFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [confirmDeleteNoteId, setConfirmDeleteNoteId] = useState<string | null>(null);
 
   const isAllProjectsView = id === "all";
   const syntheticAllProject = {
@@ -248,9 +259,10 @@ export function ProjectPage() {
                               variant="ghost"
                               className="rounded-2xl"
                               onClick={() => {
-                                void deleteNote(note.id);
+                                setConfirmDeleteNoteId(note.id);
                               }}
                             >
+                              <Trash2 className="h-4 w-4" />
                               Remove
                             </Button>
                           </div>
@@ -289,6 +301,38 @@ export function ProjectPage() {
           )}
         </div>
       </div>
+
+      <AlertDialog
+        open={!!confirmDeleteNoteId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConfirmDeleteNoteId(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this note?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the note from your workspace and from this project view.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              tone="destructive"
+              onClick={() => {
+                if (confirmDeleteNoteId) {
+                  void deleteNote(confirmDeleteNoteId);
+                }
+                setConfirmDeleteNoteId(null);
+              }}
+            >
+              Delete note
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

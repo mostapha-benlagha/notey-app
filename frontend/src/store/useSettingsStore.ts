@@ -17,6 +17,7 @@ const defaultSettings: Settings = {
   compactBoardEnabled: false,
   autoOpenLastProject: true,
   fullWidthWorkspaceEnabled: false,
+  includeLinkedTodosInExports: true,
 };
 
 type BooleanSettingKey =
@@ -28,7 +29,8 @@ type BooleanSettingKey =
   | "reminderEmailsEnabled"
   | "compactBoardEnabled"
   | "autoOpenLastProject"
-  | "fullWidthWorkspaceEnabled";
+  | "fullWidthWorkspaceEnabled"
+  | "includeLinkedTodosInExports";
 
 interface SettingsState extends Settings {
   isLoading: boolean;

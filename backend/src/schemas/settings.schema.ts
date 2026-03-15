@@ -14,6 +14,7 @@ export const settingsSchema = z.object({
   compactBoardEnabled: z.boolean(),
   autoOpenLastProject: z.boolean(),
   fullWidthWorkspaceEnabled: z.boolean(),
+  includeLinkedTodosInExports: z.boolean(),
 });
 
 export const updateSettingsSchema = settingsSchema.partial();

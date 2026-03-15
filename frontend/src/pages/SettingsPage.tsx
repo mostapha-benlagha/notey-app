@@ -54,6 +54,7 @@ export function SettingsPage() {
     compactBoardEnabled,
     autoOpenLastProject,
     fullWidthWorkspaceEnabled,
+    includeLinkedTodosInExports,
     setBooleanSetting,
     setTwoFactorMethod,
     setDigestCadence,
@@ -279,6 +280,11 @@ export function SettingsPage() {
                 title="Task extraction"
                 description="Automatically create tasks from action-oriented notes."
                 control={<Switch checked={taskExtractionEnabled} onCheckedChange={(value) => setBooleanSetting("taskExtractionEnabled", value)} />}
+              />
+              <SettingRow
+                title="Include linked to-dos in exports"
+                description="Append tasks related to the note when exporting it as a PDF."
+                control={<Switch checked={includeLinkedTodosInExports} onCheckedChange={(value) => setBooleanSetting("includeLinkedTodosInExports", value)} />}
               />
             </CardContent>
           </Card>
