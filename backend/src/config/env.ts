@@ -29,6 +29,9 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().min(1).optional(),
   OPENAI_MODEL: z.string().min(1).default('gpt-4.1-mini'),
   OPENAI_BASE_URL: z.string().url().default('https://api.openai.com/v1'),
+  GEMINI_API_KEY: z.string().min(1).optional(),
+  GEMINI_MODEL: z.string().min(1).default('gemini-2.5-flash'),
+  GEMINI_BASE_URL: z.string().url().default('https://generativelanguage.googleapis.com/v1beta'),
 });
 
 const parsed = envSchema.safeParse(process.env);
