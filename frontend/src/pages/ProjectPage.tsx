@@ -206,11 +206,7 @@ export function ProjectPage() {
                       </option>
                     ))}
                   </Select>
-                ) : (
-                  <div className="rounded-xl border border-input bg-secondary/40 px-3 py-2 text-sm text-muted-foreground">
-                    Filtering inside {project.name}
-                  </div>
-                )}
+                ) : null}
                 <Select value={sortOrder} onChange={(event) => setSortOrder(event.target.value as "newest" | "oldest")}>
                   <option value="newest">Newest first</option>
                   <option value="oldest">Oldest first</option>
