@@ -221,7 +221,7 @@ export function ProjectPage() {
                     const noteProject = projects.find((item) => item.id === note.projectId);
 
                     return (
-                      <Card key={note.id} className="rounded-[28px] border-white/80 bg-white/92">
+                      <Card key={note.id} className="flex h-full flex-col rounded-[28px] border-white/80 bg-white/92">
                         <CardHeader className="gap-4">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex flex-wrap gap-2">
@@ -235,12 +235,12 @@ export function ProjectPage() {
                           </div>
                           <div>
                             <CardTitle className="text-lg leading-7">{note.content.slice(0, 90)}</CardTitle>
-                            <CardDescription className="mt-2 line-clamp-4 text-sm leading-7 text-muted-foreground">
+                            <CardDescription className="mt-2 line-clamp-2 text-sm leading-7 text-muted-foreground">
                               {note.content}
                             </CardDescription>
                           </div>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="flex flex-1 flex-col gap-4">
                           {note.tags.length ? (
                             <div className="flex flex-wrap gap-2">
                               {note.tags.slice(0, 4).map((tag) => (
@@ -253,7 +253,7 @@ export function ProjectPage() {
                             <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">No tags yet</p>
                           )}
 
-                          <div className="flex gap-2">
+                          <div className="mt-auto flex gap-2">
                             <Button
                               type="button"
                               className="flex-1 rounded-2xl"

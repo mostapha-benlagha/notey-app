@@ -44,7 +44,6 @@ export function KanbanTaskCard({
               {task.source === "note_ai" ? "AI" : "Manual"}
             </Badge>
           </div>
-          {task.description ? <p className="mt-3 text-sm leading-7 text-foreground/75">{task.description}</p> : null}
           <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
             {project ? (
               <span className="inline-flex items-center gap-1">
