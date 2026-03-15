@@ -20,7 +20,7 @@ export const noteSchema = z.object({
   id: z.string(),
   content: z.string().min(1),
   richContent: z.string().min(1),
-  projectId: z.string().min(1),
+  projectId: z.string(),
   tags: z.array(z.string()),
   createdAt: z.string().min(1),
   attachments: z.array(noteAttachmentSchema),
@@ -30,7 +30,7 @@ export const noteSchema = z.object({
 export const createNoteSchema = z.object({
   content: z.string().trim().min(1, "Note content is required"),
   richContent: z.string().trim().min(1, "Rich note content is required"),
-  projectId: z.string().min(1),
+  projectId: z.string().default(""),
   attachments: z.array(noteAttachmentSchema).default([]),
 });
 

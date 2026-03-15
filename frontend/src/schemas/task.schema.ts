@@ -12,7 +12,7 @@ export const taskSchema = z.object({
   title: z.string().min(1),
   description: z.string().default(""),
   statusId: z.string().min(1),
-  projectId: z.string().min(1),
+  projectId: z.string(),
   noteId: z.string().nullable(),
   evidenceNoteIds: z.array(z.string()).default([]),
   source: z.enum(["manual", "note_ai"]),

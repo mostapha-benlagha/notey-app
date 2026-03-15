@@ -80,7 +80,7 @@ function createNoteNodes(input: {
           <div className="w-[220px]">
             <div className="flex items-center justify-between gap-3">
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                {project?.name ?? note.projectId}
+                {(project?.name ?? note.projectId) || "No project"}
               </span>
               <span className="text-[11px] text-muted-foreground">
                 {new Date(note.createdAt).toLocaleDateString()}
@@ -146,7 +146,7 @@ function createTaskNodes(input: {
                 To-do
               </span>
               <span className="text-[11px] text-muted-foreground">
-                {project?.name ?? task.projectId}
+                {(project?.name ?? task.projectId) || "No project"}
               </span>
             </div>
             <p className="mt-3 text-sm font-semibold leading-6 text-foreground">
@@ -186,7 +186,9 @@ function createTaskNodes(input: {
 }
 
 function createProjectEdges(notes: Note[]) {
-  return notes.map((note) => ({
+  return notes
+    .filter((note) => !!note.projectId)
+    .map((note) => ({
     id: `project-link:${note.id}:${note.projectId}`,
     source: `note:${note.id}`,
     target: `project:${note.projectId}`,

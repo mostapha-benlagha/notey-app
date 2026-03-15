@@ -7,7 +7,7 @@ export const taskSchema = z.object({
   title: z.string().min(1),
   description: z.string(),
   statusId: z.string().min(1),
-  projectId: z.string().min(1),
+  projectId: z.string(),
   noteId: z.string().nullable(),
   evidenceNoteIds: z.array(z.string()),
   source: taskSourceSchema,
@@ -27,14 +27,14 @@ export const createTaskSchema = z.object({
   title: z.string().trim().min(1, 'Task title is required'),
   description: z.string().trim().default(''),
   statusId: z.string().trim().min(1).default('draft'),
-  projectId: z.string().trim().min(1, 'Project is required'),
+  projectId: z.string().trim().default(''),
   noteId: z.string().trim().min(1).nullable().default(null),
   tags: z.array(z.string().trim().min(1)).default([]),
 });
 
 export const createExtractedTasksSchema = z.object({
   noteId: z.string().trim().min(1),
-  projectId: z.string().trim().min(1),
+  projectId: z.string().trim().default(''),
   titles: z.array(z.string().trim().min(1)).min(1),
 });
 
@@ -43,7 +43,7 @@ export const updateTaskSchema = z
     title: z.string().trim().min(1).optional(),
     description: z.string().trim().optional(),
     statusId: z.string().trim().min(1).optional(),
-    projectId: z.string().trim().min(1).optional(),
+    projectId: z.string().trim().optional(),
     noteId: z.string().trim().min(1).nullable().optional(),
     tags: z.array(z.string().trim().min(1)).optional(),
     order: z.number().int().nonnegative().optional(),

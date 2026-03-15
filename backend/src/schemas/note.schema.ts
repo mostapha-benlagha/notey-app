@@ -13,7 +13,7 @@ export const noteAttachmentSchema = z.object({
 export const createNoteSchema = z.object({
   content: z.string().trim().min(1, 'Note content is required'),
   richContent: z.string().trim().min(1, 'Rich note content is required'),
-  projectId: z.string().trim().min(1, 'Project is required'),
+  projectId: z.string().trim().default(''),
   tags: z.array(z.string().trim().min(1)).default([]),
   attachments: z.array(noteAttachmentSchema).default([]),
 });

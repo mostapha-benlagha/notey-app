@@ -25,7 +25,7 @@ const taskSchema = new Schema(
     },
     projectId: {
       type: String,
-      required: true,
+      default: '',
       trim: true,
     },
     noteId: {

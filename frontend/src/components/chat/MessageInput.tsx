@@ -9,7 +9,9 @@ import type { NoteAttachment } from "@/types/note.types";
 import { AttachmentPreview } from "@/components/chat/AttachmentPreview";
 import { ProjectSelector } from "@/components/projects/ProjectSelector";
 import { uploadNoteAttachments } from "@/services/api";
+import { useProjectsStore } from "@/store/useProjectsStore";
 import { audioBlobToAttachment, toAttachment } from "@/utils/attachments";
+import { resolveAutoProject } from "@/utils/projectAssignment";
 
 export function MessageInput({
   onSubmit,
@@ -19,8 +21,10 @@ export function MessageInput({
   autoFocus?: boolean;
 }) {
   const navigate = useNavigate();
+  const projects = useProjectsStore((state) => state.projects);
+  const createProject = useProjectsStore((state) => state.createProject);
   const [content, setContent] = useState("");
-  const [projectId, setProjectId] = useState("work");
+  const [projectId, setProjectId] = useState("auto");
   const [attachments, setAttachments] = useState<NoteAttachment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -48,11 +52,19 @@ export function MessageInput({
   };
 
   const openFullEditor = () => {
+    const resolvedProjectId =
+      projectId === "auto"
+        ? resolveAutoProject({
+            content,
+            projects,
+          }).projectId
+        : projectId;
+
     navigate("/app/notes/new", {
       state: {
         attachments,
         content,
-        projectId,
+        projectId: resolvedProjectId,
         returnTo: "/app",
       },
     });
@@ -67,13 +79,26 @@ export function MessageInput({
 
     try {
       const uploadedAttachments = await uploadNoteAttachments(attachments);
+      const resolvedProject =
+        projectId === "auto"
+          ? resolveAutoProject({
+              content,
+              projects,
+            })
+          : { projectId, createdProject: null };
+
+      if (resolvedProject.createdProject) {
+        createProject(resolvedProject.createdProject);
+      }
+
       await onSubmit({
         content,
-        projectId,
+        projectId: resolvedProject.projectId,
         attachments: uploadedAttachments,
       });
       setContent("");
       setAttachments([]);
+      setProjectId("auto");
     } finally {
       setIsSubmitting(false);
     }
@@ -98,7 +123,7 @@ export function MessageInput({
         )}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-            <ProjectSelector value={projectId} onChange={setProjectId} />
+            <ProjectSelector value={projectId} onChange={setProjectId} includeAutoOption />
             <div className="flex gap-2">
               <Button type="button" variant="ghost" size="sm" onClick={openFullEditor}>
                 <Expand className="h-4 w-4" />

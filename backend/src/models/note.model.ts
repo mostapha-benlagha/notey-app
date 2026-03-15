@@ -62,7 +62,7 @@ const noteSchema = new Schema(
     },
     projectId: {
       type: String,
-      required: true,
+      default: '',
       trim: true,
     },
     tags: {

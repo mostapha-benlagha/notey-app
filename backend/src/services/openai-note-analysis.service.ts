@@ -15,7 +15,6 @@ interface OpenAiNoteAnalysisResult {
   prompt: string;
 }
 
-const supportedProjectIds = ['work', 'startup', 'research', 'personal'] as const;
 const actionStartPattern = /^(meet|meeting|call|sync|buy|do|prepare|send|review|follow up|ship|draft|schedule|finalize|create|push|deploy|prototype|research|investigate|compare|update|write|plan|fix|launch)\b/i;
 
 const responseSchema = {
@@ -25,7 +24,7 @@ const responseSchema = {
   properties: {
     projectId: {
       type: 'string',
-      enum: [...supportedProjectIds],
+      maxLength: 80,
     },
     tags: {
       type: 'array',
@@ -88,8 +87,9 @@ function expandCompoundTodoTitles(values: string[]) {
 function buildPrompt(input: OpenAiNoteAnalysisInput) {
   return [
     'You analyze a single Notey note and return only structured data.',
-    `Supported project ids: ${supportedProjectIds.join(', ')}.`,
-    `Choose the best project id for this note. If nothing is clearly better, keep ${input.fallbackProjectId}.`,
+    `Choose the best project id for this note. If nothing is clearly better, keep ${input.fallbackProjectId || 'an empty string'}.`,
+    'Project ids should be short, lowercase, and slug-like when you introduce a new one.',
+    'If the note does not clearly belong to any project, return an empty string for projectId.',
     'Extract short useful tags, clear actionable to-dos, and statements that imply previously-open work is now complete.',
     'Treat recent project notes as context only. Use them to detect follow-up tasks or completion updates across notes.',
     'Keep todos concise and imperative. If one sentence contains multiple actions, split them into separate todoTitles.',
@@ -143,8 +143,8 @@ function sanitizeResult(input: {
   prompt: string;
 }): OpenAiNoteAnalysisResult {
   const suggestedProjectId =
-    typeof input.raw.projectId === 'string' && supportedProjectIds.includes(input.raw.projectId as (typeof supportedProjectIds)[number])
-      ? input.raw.projectId
+    typeof input.raw.projectId === 'string'
+      ? input.raw.projectId.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80)
       : input.fallbackProjectId;
 
   const tags = Array.isArray(input.raw.tags)

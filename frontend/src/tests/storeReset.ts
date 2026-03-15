@@ -6,7 +6,7 @@ import { useTasksStore } from "@/store/useTasksStore";
 export function resetAllStores() {
   useProjectsStore.setState({
     projects: [...mockProjects],
-    selectedProjectId: "work",
+    selectedProjectId: null,
   });
 
   useTasksStore.setState({
