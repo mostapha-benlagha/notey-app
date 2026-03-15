@@ -7,6 +7,7 @@ import { AuthLayout } from "@/layouts/AuthLayout";
 import { MainLayout } from "@/layouts/MainLayout";
 import { AccountPage } from "@/pages/AccountPage";
 import { ChatPage } from "@/pages/ChatPage";
+import { FlowPage } from "@/pages/FlowPage";
 import { LandingPage } from "@/pages/LandingPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
@@ -44,6 +45,7 @@ export function AppRouter() {
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
           <Route path="/app" element={<ChatPage />} />
+          <Route path="/app/flow" element={<FlowPage />} />
           <Route
             path="/app/notes/new"
             element={

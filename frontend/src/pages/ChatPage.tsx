@@ -1,5 +1,7 @@
 import { useNotes } from "@/hooks/useNotes";
-import { useNavigate } from "react-router-dom";
+import { Workflow } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { useProjectsStore } from "@/store/useProjectsStore";
 import { useNotesStore } from "@/store/useNotesStore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,8 +26,15 @@ export function ChatPage() {
             <CardDescription>Chat-based notes</CardDescription>
             <CardTitle className="text-3xl">Capture ideas like a conversation</CardTitle>
           </div>
-          <div className="w-full max-w-md">
-            <SearchBar value={searchTerm} onChange={setSearchTerm} />
+          <div className="flex w-full max-w-xl items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <SearchBar value={searchTerm} onChange={setSearchTerm} />
+            </div>
+            <Button asChild variant="outline" size="icon" className="shrink-0 rounded-2xl" aria-label="Open flow view">
+              <Link to="/app/flow">
+                <Workflow className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="min-h-0 flex-1">
