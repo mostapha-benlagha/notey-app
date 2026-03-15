@@ -41,8 +41,14 @@ export function NoteEditorPage() {
     return draftState?.content?.trim() ? plainTextToHtml(draftState.content) : "<p></p>";
   }, [draftState?.content, existingNote]);
 
-  const initialProjectId = existingNote?.projectId ?? draftState?.projectId ?? "work";
-  const initialAttachments = existingNote?.attachments ?? draftState?.attachments ?? [];
+  const initialProjectId = useMemo(
+    () => existingNote?.projectId ?? draftState?.projectId ?? "work",
+    [draftState?.projectId, existingNote?.projectId],
+  );
+  const initialAttachments = useMemo(
+    () => existingNote?.attachments ?? draftState?.attachments ?? [],
+    [draftState?.attachments, existingNote?.attachments],
+  );
   const returnTo = draftState?.returnTo ?? "/app";
 
   const [projectId, setProjectId] = useState(initialProjectId);
@@ -89,7 +95,7 @@ export function NoteEditorPage() {
           projectId,
           richContent: content,
         });
-        navigate(returnTo, { replace: false, state: { focusNoteId: note.id } });
+        navigate(returnTo, { replace: true, state: { focusNoteId: note.id } });
         return;
       }
 
@@ -103,7 +109,7 @@ export function NoteEditorPage() {
         projectId,
         richContent: content,
       });
-      navigate(returnTo, { replace: false, state: { focusNoteId: id } });
+      navigate(returnTo, { replace: true, state: { focusNoteId: id } });
     } finally {
       setIsSaving(false);
     }
@@ -125,11 +131,9 @@ export function NoteEditorPage() {
           <CardTitle className="text-3xl">{isNew ? "Write a full note" : "Refine your note"}</CardTitle>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button asChild variant="ghost" className="rounded-2xl">
-            <Link to={returnTo}>
+          <Button variant="ghost" className="rounded-2xl" onClick={() => navigate(returnTo, { replace: true })}>
               <ArrowLeft className="h-4 w-4" />
               Back
-            </Link>
           </Button>
           <Button className="rounded-2xl" onClick={() => void handleSave()} disabled={isSaving}>
             <Save className="h-4 w-4" />
