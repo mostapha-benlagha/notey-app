@@ -1,5 +1,6 @@
 import "@xyflow/react/dist/style.css";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Settings2 } from "lucide-react";
 import {
   addEdge,
   Background,
@@ -12,7 +13,13 @@ import {
   useEdgesState,
   useNodesState,
 } from "@xyflow/react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useNotesStore } from "@/store/useNotesStore";
 import { useProjectsStore } from "@/store/useProjectsStore";
 import { useTasksStore } from "@/store/useTasksStore";
@@ -22,6 +29,69 @@ import type { Task, TaskStatus } from "@/types/task.types";
 
 function truncate(value: string, maxLength: number) {
   return value.length <= maxLength ? value : `${value.slice(0, maxLength - 1)}...`;
+}
+
+function toggleSelection(current: string[] | null, value: string, allValues: string[]) {
+  const next = new Set(current ?? allValues);
+  if (next.has(value)) {
+    next.delete(value);
+  } else {
+    next.add(value);
+  }
+
+  return next.size === allValues.length ? null : Array.from(next);
+}
+
+function isWithinDateRange(createdAt: string, dateFrom: string, dateTo: string) {
+  const timestamp = new Date(createdAt).getTime();
+  if (Number.isNaN(timestamp)) {
+    return false;
+  }
+
+  if (dateFrom) {
+    const fromTimestamp = new Date(`${dateFrom}T00:00:00`).getTime();
+    if (timestamp < fromTimestamp) {
+      return false;
+    }
+  }
+
+  if (dateTo) {
+    const toTimestamp = new Date(`${dateTo}T23:59:59.999`).getTime();
+    if (timestamp > toTimestamp) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+type TimelinePreset = "today" | "week" | "month" | "custom";
+
+function toDateInputValue(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
+function getTimelineRange(preset: TimelinePreset, customFrom: string, customTo: string) {
+  const now = new Date();
+
+  if (preset === "today") {
+    const today = toDateInputValue(now);
+    return { dateFrom: today, dateTo: today };
+  }
+
+  if (preset === "week") {
+    const from = new Date(now);
+    from.setDate(now.getDate() - 7);
+    return { dateFrom: toDateInputValue(from), dateTo: toDateInputValue(now) };
+  }
+
+  if (preset === "month") {
+    const from = new Date(now);
+    from.setMonth(now.getMonth() - 1);
+    return { dateFrom: toDateInputValue(from), dateTo: toDateInputValue(now) };
+  }
+
+  return { dateFrom: customFrom, dateTo: customTo };
 }
 
 function createProjectNodes(projects: Project[]) {
@@ -189,17 +259,17 @@ function createProjectEdges(notes: Note[]) {
   return notes
     .filter((note) => !!note.projectId)
     .map((note) => ({
-    id: `project-link:${note.id}:${note.projectId}`,
-    source: `note:${note.id}`,
-    target: `project:${note.projectId}`,
-    animated: false,
-    deletable: false,
-    selectable: false,
-    style: {
-      stroke: "#c0cad9",
-      strokeWidth: 1.25,
-    },
-  })) satisfies Edge[];
+      id: `project-link:${note.id}:${note.projectId}`,
+      source: `note:${note.id}`,
+      target: `project:${note.projectId}`,
+      animated: false,
+      deletable: false,
+      selectable: false,
+      style: {
+        stroke: "#c0cad9",
+        strokeWidth: 1.25,
+      },
+    })) satisfies Edge[];
 }
 
 function createTaskEdges(tasks: Task[]) {
@@ -242,22 +312,96 @@ export function FlowPage() {
   const syncTasksProjectForNote = useTasksStore((state) => state.syncTasksProjectForNote);
   const projects = useProjectsStore((state) => state.projects);
 
-  const activeTasks = useMemo(() => tasks.filter((task) => !task.deletedAt), [tasks]);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [timelinePreset, setTimelinePreset] = useState<TimelinePreset>("week");
+  const [showTodos, setShowTodos] = useState(true);
+  const [projectFilter, setProjectFilter] = useState<string[] | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string[] | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const allProjectIds = useMemo(() => projects.map((project) => project.id), [projects]);
+  const allStatusIds = useMemo(() => statuses.map((status) => status.id), [statuses]);
+  const selectedProjectIds = projectFilter ?? allProjectIds;
+  const selectedStatusIds = statusFilter ?? allStatusIds;
+  const activeDateRange = useMemo(() => getTimelineRange(timelinePreset, dateFrom, dateTo), [dateFrom, dateTo, timelinePreset]);
+
+  const filteredNotes = useMemo(
+    () =>
+      notes.filter((note) => {
+        const matchesProject = !note.projectId || selectedProjectIds.includes(note.projectId);
+        return matchesProject && isWithinDateRange(note.createdAt, activeDateRange.dateFrom, activeDateRange.dateTo);
+      }),
+    [activeDateRange.dateFrom, activeDateRange.dateTo, notes, selectedProjectIds],
+  );
+
+  const visibleNoteIds = useMemo(() => new Set(filteredNotes.map((note) => note.id)), [filteredNotes]);
+
+  const filteredTasks = useMemo(
+    () =>
+      tasks.filter((task) => {
+        if (task.deletedAt || !showTodos) {
+          return false;
+        }
+
+        const matchesProject = !task.projectId || selectedProjectIds.includes(task.projectId);
+        const matchesStatus = selectedStatusIds.includes(task.statusId);
+        const matchesLinkedNote = !task.noteId || visibleNoteIds.has(task.noteId);
+
+        return matchesProject && matchesStatus && matchesLinkedNote;
+      }),
+    [selectedProjectIds, selectedStatusIds, showTodos, tasks, visibleNoteIds],
+  );
+
+  const visibleProjectIds = useMemo(
+    () =>
+      new Set(
+        [
+          ...filteredNotes.map((note) => note.projectId).filter(Boolean),
+          ...filteredTasks.map((task) => task.projectId).filter(Boolean),
+        ],
+      ),
+    [filteredNotes, filteredTasks],
+  );
+
+  const filteredProjects = useMemo(
+    () => projects.filter((project) => visibleProjectIds.has(project.id)),
+    [projects, visibleProjectIds],
+  );
+
   const graphNodes = useMemo(
     () => [
-      ...createProjectNodes(projects),
-      ...createNoteNodes({ notes, projects }),
-      ...createTaskNodes({ tasks: activeTasks, statuses, projects }),
+      ...createProjectNodes(filteredProjects),
+      ...createNoteNodes({ notes: filteredNotes, projects }),
+      ...(showTodos ? createTaskNodes({ tasks: filteredTasks, statuses, projects }) : []),
     ],
-    [activeTasks, notes, projects, statuses],
+    [filteredNotes, filteredProjects, filteredTasks, projects, showTodos, statuses],
   );
   const graphEdges = useMemo(
-    () => [...createProjectEdges(notes), ...createTaskEdges(activeTasks)],
-    [activeTasks, notes],
+    () => [
+      ...createProjectEdges(filteredNotes),
+      ...(showTodos ? createTaskEdges(filteredTasks) : []),
+    ],
+    [filteredNotes, filteredTasks, showTodos],
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(graphNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(graphEdges);
+
+  const activeFilterCount =
+    (timelinePreset !== "week" ? 1 : 0) +
+    (projectFilter ? 1 : 0) +
+    (statusFilter ? 1 : 0) +
+    (showTodos ? 0 : 1);
+
+  const dateRangeLabel =
+    timelinePreset === "today"
+      ? "Today"
+      : timelinePreset === "week"
+        ? "Last 7 days"
+        : timelinePreset === "month"
+          ? "Last month"
+          : `${activeDateRange.dateFrom || "Any start"} -> ${activeDateRange.dateTo || "Any end"}`;
 
   useEffect(() => {
     setNodes(graphNodes);
@@ -335,23 +479,33 @@ export function FlowPage() {
   return (
     <div className="flex h-full min-h-0 flex-col gap-6 overflow-hidden">
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[32px]">
-        <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <CardDescription>Flow workspace</CardDescription>
-            <CardTitle className="text-3xl">Map projects, notes, and to-dos visually</CardTitle>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <div className="inline-flex rounded-full bg-amber-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
-              {projects.length} projects
+        <CardHeader className="gap-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <CardDescription>Flow workspace</CardDescription>
+              <CardTitle className="text-3xl">Map projects, notes, and to-dos visually</CardTitle>
             </div>
-            <div className="inline-flex rounded-full bg-secondary px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {notes.length} notes
-            </div>
-            <div className="inline-flex rounded-full bg-sky-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
-              {activeTasks.length} to-dos
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex rounded-full border border-border bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {dateRangeLabel}
+              </div>
+              <div className="inline-flex rounded-full bg-amber-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
+                {filteredProjects.length} projects
+              </div>
+              <div className="inline-flex rounded-full bg-secondary px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {filteredNotes.length} notes
+              </div>
+              <div className="inline-flex rounded-full bg-sky-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+                {showTodos ? filteredTasks.length : 0} to-dos
+              </div>
+              <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setFiltersOpen(true)}>
+                <Settings2 className="h-4 w-4" />
+                Filters {activeFilterCount ? `(${activeFilterCount})` : ""}
+              </Button>
             </div>
           </div>
         </CardHeader>
+
         <CardContent className="min-h-0 flex-1 p-0">
           <div className="relative h-full min-h-[560px] bg-[radial-gradient(circle_at_top,rgba(22,99,199,0.07),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(245,248,252,0.96))]">
             {isLoading ? (
@@ -362,9 +516,9 @@ export function FlowPage() {
             {!isLoading && !nodes.length ? (
               <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center">
                 <div className="rounded-[28px] border border-dashed border-border bg-white/80 px-8 py-10 shadow-soft">
-                  <h2 className="text-lg font-semibold">Nothing on the canvas yet</h2>
+                  <h2 className="text-lg font-semibold">Nothing matches these filters</h2>
                   <p className="mt-2 max-w-md text-sm leading-7 text-muted-foreground">
-                    Projects, notes, and to-dos will appear here together. Connect notes to other projects to move them there, and connect to-dos to notes to link them.
+                    Expand the timeline, re-enable more projects or task statuses, or show to-dos again to bring items back into view.
                   </p>
                 </div>
               </div>
@@ -407,6 +561,139 @@ export function FlowPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <DialogContent className="left-auto right-0 top-0 h-dvh max-h-dvh overflow-y-auto translate-x-0 translate-y-0 rounded-none border-y-0 border-r-0 border-l border-white/80 p-0 sm:max-w-[460px]">
+          <div className="flex h-full flex-col bg-white/96">
+            <DialogHeader className="border-b border-border/70 px-6 py-5">
+              <DialogTitle className="text-2xl">Flow filters</DialogTitle>
+              <DialogDescription>
+                Narrow the workspace without crowding the canvas. Adjust the timeline, visible projects, and task visibility here.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex-1 space-y-6 px-6 py-6">
+              <section className="grid gap-4 rounded-[24px] border border-border bg-secondary/25 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Timeline</p>
+                  <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                    Show only notes created inside this date range.
+                  </p>
+                </div>
+                <label className="grid gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Range</span>
+                  <Select value={timelinePreset} onChange={(event) => setTimelinePreset(event.target.value as TimelinePreset)}>
+                    <option value="today">Today</option>
+                    <option value="week">Week</option>
+                    <option value="month">Month</option>
+                    <option value="custom">Custom</option>
+                  </Select>
+                </label>
+                {timelinePreset === "custom" ? (
+                  <>
+                    <label className="grid gap-2">
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">From</span>
+                      <Input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
+                    </label>
+                    <label className="grid gap-2">
+                      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">To</span>
+                      <Input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
+                    </label>
+                  </>
+                ) : null}
+              </section>
+
+              <section className="grid gap-4 rounded-[24px] border border-border bg-white p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Projects</p>
+                    <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                      Include only the projects you want to see in the graph.
+                    </p>
+                  </div>
+                  <button type="button" className="text-xs font-semibold text-primary" onClick={() => setProjectFilter(null)}>
+                    Select all
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {projects.map((project) => {
+                    const checked = selectedProjectIds.includes(project.id);
+                    return (
+                      <label key={project.id} className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/35 px-3 py-2 text-sm text-foreground">
+                        <Checkbox
+                          checked={checked}
+                          onChange={() => setProjectFilter((current) => toggleSelection(current, project.id, allProjectIds))}
+                        />
+                        <span>{project.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section className="grid gap-4 rounded-[24px] border border-border bg-white p-4">
+                <div className="flex items-center justify-between gap-4 rounded-[20px] border border-border bg-secondary/25 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Show to-dos</p>
+                    <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                      Hide task nodes and links if you only want project and note relationships.
+                    </p>
+                  </div>
+                  <Switch checked={showTodos} onCheckedChange={setShowTodos} />
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Task statuses</p>
+                    <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                      Filter which task columns appear in the graph.
+                    </p>
+                  </div>
+                  <button type="button" className="text-xs font-semibold text-primary" onClick={() => setStatusFilter(null)}>
+                    Select all
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  {statuses.map((status) => {
+                    const checked = selectedStatusIds.includes(status.id);
+                    return (
+                      <label key={status.id} className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/35 px-3 py-2 text-sm text-foreground">
+                        <Checkbox
+                          checked={checked}
+                          onChange={() => setStatusFilter((current) => toggleSelection(current, status.id, allStatusIds))}
+                          disabled={!showTodos}
+                        />
+                        <span>{status.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </section>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 border-t border-border/70 px-6 py-4">
+              <button
+                type="button"
+                className="text-sm font-semibold text-muted-foreground"
+                onClick={() => {
+                  setTimelinePreset("week");
+                  setDateFrom("");
+                  setDateTo("");
+                  setProjectFilter(null);
+                  setStatusFilter(null);
+                  setShowTodos(true);
+                }}
+              >
+                Reset filters
+              </button>
+              <Button type="button" className="rounded-2xl" onClick={() => setFiltersOpen(false)}>
+                Apply and close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
