@@ -28,7 +28,9 @@ interface DraftState {
 
 interface ExportPageItem {
   kind: "paragraph" | "todo-heading" | "todo";
-  text: string;
+  text?: string;
+  task?: Task;
+  taskStatusLabel?: string;
 }
 
 interface ExportPageData {
@@ -93,6 +95,7 @@ function buildExportPages(
   linkedTasks: Task[],
   includeLinkedTodos: boolean,
   density: "preview" | "pdf",
+  taskStatusLabels: Record<string, string>,
 ) {
   const pages: ExportPageData[] = [{ items: [], showHeader: true }];
   let currentPage = pages[0];
@@ -119,7 +122,11 @@ function buildExportPages(
   if (includeLinkedTodos && linkedTasks.length) {
     pushItem({ kind: "todo-heading", text: "Linked to-dos" }, 2);
     linkedTasks.forEach((task) => {
-      pushItem({ kind: "todo", text: task.title }, estimateExportItemWeight(task.title, 1));
+      const taskWeight =
+        estimateExportItemWeight(task.title, 1) +
+        estimateExportItemWeight(task.description || "", 1) +
+        estimateExportItemWeight(`${taskStatusLabels[task.statusId] ?? task.statusId} ${task.source}`, 1);
+      pushItem({ kind: "todo", task, taskStatusLabel: taskStatusLabels[task.statusId] ?? task.statusId }, taskWeight);
     });
   }
 
@@ -167,14 +174,18 @@ function NoteExportPreview({
   linkedTasks,
   includeLinkedTodos,
   density,
+  noteMeta,
+  taskStatusLabels,
 }: {
   title: string;
   paragraphs: string[];
   linkedTasks: Task[];
   includeLinkedTodos: boolean;
   density: "preview" | "pdf";
+  noteMeta: Array<{ label: string; value: string }>;
+  taskStatusLabels: Record<string, string>;
 }) {
-  const pages = buildExportPages(paragraphs, linkedTasks, includeLinkedTodos, density);
+  const pages = buildExportPages(paragraphs, linkedTasks, includeLinkedTodos, density, taskStatusLabels);
   const isPdfDensity = density === "pdf";
 
   return (
@@ -190,9 +201,19 @@ function NoteExportPreview({
               <h1 className={isPdfDensity ? "text-[1.45rem] font-extrabold tracking-tight text-foreground" : "text-[1.8rem] font-extrabold tracking-tight text-foreground"}>
                 {title}
               </h1>
-              <p className={isPdfDensity ? "mt-2.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground" : "mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground"}>
+              <p className={isPdfDensity ? "mt-2.5 text-[0.65rem] font-semibold tracking-[0.04em] text-muted-foreground" : "mt-3 text-xs font-semibold tracking-[0.04em] text-muted-foreground"}>
                 Exported from Notey on {new Date().toLocaleString()}
               </p>
+              {!!noteMeta.length ? (
+                <div className={isPdfDensity ? "mt-5 space-y-1.5 text-[0.72rem] leading-5 text-muted-foreground" : "mt-6 space-y-2 text-[0.82rem] leading-6 text-muted-foreground"}>
+                  {noteMeta.map((item) => (
+                    <p key={item.label}>
+                      <span className="font-semibold">{item.label}:</span>{" "}
+                      <span className="text-foreground">{item.value}</span>
+                    </p>
+                  ))}
+                </div>
+              ) : null}
             </>
           ) : null}
           <div
@@ -220,9 +241,27 @@ function NoteExportPreview({
                 }
 
                 if (item.kind === "todo") {
+                  const task = item.task;
+                  if (!task) {
+                    return null;
+                  }
+
                   return (
-                    <div key={`item-${pageIndex}-${index}`} className="pl-6">
-                      <p className="list-item">{item.text}</p>
+                    <div key={`item-${pageIndex}-${index}`}>
+                      <p className="font-semibold text-foreground">{task.title}</p>
+                      <p className={isPdfDensity ? "text-[0.72rem] text-muted-foreground" : "text-[0.78rem] text-muted-foreground"}>
+                        Status: {item.taskStatusLabel} | Source: {task.source === "note_ai" ? "Created by AI" : "Created manually"}
+                      </p>
+                      {task.description ? (
+                        <p className={isPdfDensity ? "mt-1 text-[0.78rem] leading-5 text-foreground" : "mt-1 text-[0.88rem] leading-6 text-foreground"}>
+                          {task.description}
+                        </p>
+                      ) : null}
+                      {task.tags.length ? (
+                        <p className={isPdfDensity ? "mt-1 text-[0.72rem] text-muted-foreground" : "mt-1 text-[0.78rem] text-muted-foreground"}>
+                          Tags: {task.tags.map((tag) => `#${tag}`).join(", ")}
+                        </p>
+                      ) : null}
                     </div>
                   );
                 }
@@ -250,6 +289,7 @@ export function NoteEditorPage() {
   const markNoteSeen = useNotificationsStore((state) => state.markNoteSeen);
   const projects = useProjectsStore((state) => state.projects);
   const tasks = useTasksStore((state) => state.tasks);
+  const statuses = useTasksStore((state) => state.statuses);
   const includeLinkedTodosInExports = useSettingsStore((state) => state.includeLinkedTodosInExports);
   const existingNote = id ? getNoteById(id) : undefined;
   const isNew = !id;
@@ -312,6 +352,27 @@ export function NoteEditorPage() {
 
     return tasks.filter((task) => !task.deletedAt && (task.noteId === id || task.evidenceNoteIds.includes(id)));
   }, [id, isNew, tasks]);
+  const taskStatusLabels = useMemo(
+    () => Object.fromEntries(statuses.map((status) => [status.id, status.label])),
+    [statuses],
+  );
+  const exportNoteMeta = useMemo(() => {
+    const createdAt = existingNote ? new Date(existingNote.createdAt) : new Date();
+    const meta = [
+      { label: "Project", value: exportProjectName },
+      { label: "Created", value: createdAt.toLocaleString() },
+      { label: "Tags", value: existingNote?.tags?.length ? existingNote.tags.map((tag) => `#${tag}`).join(", ") : "No tags" },
+      { label: "Attachments", value: `${attachments.length}` },
+      { label: "Analysis", value: existingNote?.analysis?.status ? existingNote.analysis.status : "Not analyzed yet" },
+      { label: "Linked to-dos", value: `${linkedTasks.length}` },
+    ];
+
+    if (existingNote?.analysis?.summary) {
+      meta.push({ label: "Analysis summary", value: existingNote.analysis.summary });
+    }
+
+    return meta;
+  }, [attachments.length, existingNote, exportProjectName, linkedTasks.length]);
 
   useEffect(() => {
     setProjectId(initialProjectId);
@@ -517,6 +578,8 @@ export function NoteEditorPage() {
                   linkedTasks={linkedTasks}
                   includeLinkedTodos={includeLinkedTodosInExports}
                   density="preview"
+                  noteMeta={exportNoteMeta}
+                  taskStatusLabels={taskStatusLabels}
                 />
               </div>
               <div
@@ -530,6 +593,8 @@ export function NoteEditorPage() {
                     linkedTasks={linkedTasks}
                     includeLinkedTodos={includeLinkedTodosInExports}
                     density="pdf"
+                    noteMeta={exportNoteMeta}
+                    taskStatusLabels={taskStatusLabels}
                   />
                 </div>
               </div>

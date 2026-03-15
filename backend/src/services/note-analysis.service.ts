@@ -58,6 +58,26 @@ function uniqueStrings(values: string[]) {
   return [...new Set(values.filter(Boolean))];
 }
 
+function compactWhitespace(value: string) {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function buildAiTaskTitle(todoText: string) {
+  const normalized = compactWhitespace(todoText)
+    .replace(/^(?:i need to|need to|please|maybe|just)\s+/i, '')
+    .replace(/[.;:,]+$/g, '');
+
+  const firstClause = normalized.split(/\s*(?:,|;| because | so that | while | after | before )\s*/i)[0]?.trim() ?? normalized;
+  const words = firstClause.split(' ').filter(Boolean);
+  const shortened = words.length > 7 ? `${words.slice(0, 7).join(' ')}...` : firstClause;
+
+  return titleCase(shortened || normalized || todoText);
+}
+
+function buildAiTaskDescription(todoText: string) {
+  return compactWhitespace(todoText);
+}
+
 function expandCompoundTodoTitles(values: string[]) {
   return uniqueStrings(
     values.flatMap((value) => {
@@ -283,7 +303,9 @@ async function processNoteAnalysis(noteId: string, userId: Types.ObjectId) {
 
   if (settings?.taskExtractionEnabled !== false) {
     for (const todoTitle of analysis.todoTitles) {
-      const existingTask = projectTasks.find((task) => matchesTodo(task.title, todoTitle));
+      const taskTitle = buildAiTaskTitle(todoTitle);
+      const taskDescription = buildAiTaskDescription(todoTitle);
+      const existingTask = projectTasks.find((task) => matchesTodo(`${task.title} ${task.description ?? ''}`.trim(), todoTitle));
       if (existingTask) {
         existingTask.evidenceNoteIds = uniqueStrings([...(existingTask.evidenceNoteIds ?? []), note.id]);
         if (!existingTask.noteId) {
@@ -297,8 +319,8 @@ async function processNoteAnalysis(noteId: string, userId: Types.ObjectId) {
       const order = await TaskModel.countDocuments({ userId, statusId: todoStatusId });
       const createdTask = await TaskModel.create({
         userId,
-        title: todoTitle,
-        description: '',
+        title: taskTitle,
+        description: taskDescription,
         statusId: todoStatusId,
         projectId: note.projectId,
         noteId: note.id,
@@ -323,7 +345,7 @@ async function processNoteAnalysis(noteId: string, userId: Types.ObjectId) {
         continue;
       }
 
-      if (!matchesCompletionSignal(task.title, analysis.completedSignals)) {
+      if (!matchesCompletionSignal(`${task.title} ${task.description ?? ''}`.trim(), analysis.completedSignals)) {
         continue;
       }
 
