@@ -2,6 +2,7 @@ import { Trash2 } from "lucide-react";
 import { useProjectPageContext } from "@/features/project-page/ProjectPageContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { TagChip } from "@/components/ui/tag-chip";
 import type { Note } from "@/types/note.types";
 
 export function ProjectNoteCard({
@@ -34,9 +35,7 @@ export function ProjectNoteCard({
         {note.tags.length ? (
           <div className="flex flex-wrap gap-2">
             {note.tags.slice(0, 4).map((tag) => (
-              <span key={tag} className="rounded-full bg-secondary/70 px-2.5 py-1 text-xs font-medium text-secondary-foreground">
-                #{tag}
-              </span>
+              <TagChip key={tag} tag={tag} className="rounded-full bg-secondary/70 text-xs font-medium text-secondary-foreground" />
             ))}
           </div>
         ) : (

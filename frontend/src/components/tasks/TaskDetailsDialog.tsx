@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bot, Link2, NotebookTabs, SquarePen } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { NoteyLogoMark } from "@/components/brand/NoteyLogo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { TagChip } from "@/components/ui/tag-chip";
 import { Textarea } from "@/components/ui/textarea";
 import type { Note } from "@/types/note.types";
 import type { Project } from "@/types/project.types";
@@ -122,6 +122,7 @@ export function TaskDetailsDialog({
                 <label className="grid gap-2">
                   <span className="text-sm font-medium text-foreground">Project</span>
                   <Select value={projectId} onChange={(event) => setProjectId(event.target.value)} aria-label="Task detail project">
+                    <option value="">No project</option>
                     {projects.map((project) => (
                       <option key={project.id} value={project.id}>
                         {project.name}
@@ -188,10 +189,7 @@ export function TaskDetailsDialog({
                     .map((tag) => tag.trim())
                     .filter(Boolean)
                     .map((tag) => (
-                      <Badge key={tag} variant="outline" className="inline-flex items-center gap-1 rounded-full">
-                        <NoteyLogoMark className="h-3 w-auto" aria-hidden />
-                        {tag}
-                      </Badge>
+                      <TagChip key={tag} tag={tag} />
                     ))}
                 </div>
               )}

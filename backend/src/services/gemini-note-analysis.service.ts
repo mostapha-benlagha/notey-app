@@ -4,27 +4,9 @@ import { logger } from '../config/logger.js';
 import { NoteModel } from '../models/note.model.js';
 import { SettingsModel } from '../models/settings.model.js';
 import { TaskModel } from '../models/task.model.js';
+import type { GeminiNoteAnalysisInput, GeminiNoteAnalysisResult, GeminiTodoItem } from './gemini-note-analysis.types.js';
 import { publishNoteAnalysisUpdate } from './realtime.service.js';
 import { ensureTaskStatus, ensureTaskStatuses } from './task-status.service.js';
-
-interface GeminiNoteAnalysisInput {
-  content: string;
-  fallbackProjectId: string;
-  recentProjectNotes: string[];
-}
-
-interface GeminiTodoItem {
-  title: string;
-  details: string;
-}
-
-interface GeminiNoteAnalysisResult {
-  suggestedProjectId: string;
-  tags: string[];
-  todoItems: GeminiTodoItem[];
-  completedSignals: string[];
-  prompt: string;
-}
 
 const actionStartPattern =
   /^(meet(?:ing)?|call|sync|buy|do|prepare|send|review|follow up|ship|draft|schedule|finalize|create|push|deploy|prototype|research|investigate|compare|update|write|plan|fix|launch|check|confirm|reply|email|message|ask|discuss|test|verify|clean|organize|refactor|remove|add|implement|validate|contact|submit|renew|book|pay|collect|pick up|get|extract|assign|set)\b/i;
@@ -675,10 +657,6 @@ export async function analyzeNoteWithGemini(input: GeminiNoteAnalysisInput) {
 }
 
 async function processNoteAnalysis(noteId: string, userId: Types.ObjectId) {
-  if (!hasGeminiNoteAnalysisConfig()) {
-    return;
-  }
-
   const settings = await SettingsModel.findOne({ userId }).lean();
   const note = await NoteModel.findOne({ _id: noteId, userId });
   if (!note) {
@@ -720,7 +698,6 @@ async function processNoteAnalysis(noteId: string, userId: Types.ObjectId) {
     {
       noteId,
       userId: userId.toString(),
-      providerConfigured: hasGeminiNoteAnalysisConfig(),
       prompt: analysis.prompt,
       suggestedProjectId: analysis.suggestedProjectId,
       tags: analysis.tags,

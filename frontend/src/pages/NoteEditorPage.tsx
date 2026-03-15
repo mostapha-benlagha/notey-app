@@ -3,6 +3,7 @@ import { NoteEditorProvider } from "@/features/note-editor/NoteEditorContext";
 import { NoteEditorBody } from "@/features/note-editor/components/NoteEditorBody";
 import { NoteEditorHeader } from "@/features/note-editor/components/NoteEditorHeader";
 import { NoteExportDialog } from "@/features/note-editor/components/NoteExportDialog";
+import { NoteLinkedTasksPanel } from "@/features/note-editor/components/NoteLinkedTasksPanel";
 import { useNoteEditor } from "@/features/note-editor/useNoteEditor";
 
 export function NoteEditorPage() {
@@ -24,6 +25,7 @@ export function NoteEditorPage() {
         <input ref={editor.imageInputRef} hidden multiple accept="image/*" type="file" onChange={(event) => editor.handleFileSelect(event.target.files)} />
         <input ref={editor.fileInputRef} hidden multiple type="file" onChange={(event) => editor.handleFileSelect(event.target.files)} />
         <NoteExportDialog />
+        <NoteLinkedTasksPanel />
       </Card>
     </NoteEditorProvider>
   );

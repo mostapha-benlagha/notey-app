@@ -148,6 +148,7 @@ export async function getNote(request: Request, response: Response) {
 export async function createNote(request: Request, response: Response) {
   const user = requireUser(request);
   const payload = createNoteSchema.parse(request.body);
+  const isGeminiEnabled = hasGeminiNoteAnalysisConfig();
 
   const note = await NoteModel.create({
     userId: user._id,
@@ -157,13 +158,13 @@ export async function createNote(request: Request, response: Response) {
     tags: payload.tags,
     attachments: payload.attachments,
     analysis: {
-      status: hasGeminiNoteAnalysisConfig() ? 'pending' : 'idle',
-      summary: hasGeminiNoteAnalysisConfig() ? 'Analysis queued.' : '',
+      status: isGeminiEnabled ? 'pending' : 'idle',
+      summary: isGeminiEnabled ? 'Analysis queued.' : '',
       lastAnalyzedAt: null,
     },
   });
 
-  if (hasGeminiNoteAnalysisConfig()) {
+  if (isGeminiEnabled) {
     queueNoteAnalysis(note.id, user._id);
   }
 

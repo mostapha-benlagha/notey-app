@@ -8,6 +8,7 @@ import {
   useEdgesState,
   useNodesState,
 } from "@xyflow/react";
+import { TagChip } from "@/components/ui/tag-chip";
 import type { Note } from "@/types/note.types";
 import type { Project } from "@/types/project.types";
 import type { Task, TaskStatus } from "@/types/task.types";
@@ -174,9 +175,7 @@ function createNoteNodes(input: { notes: Note[]; projects: Project[] }) {
             {note.tags.length ? (
               <div className="mt-3 flex flex-wrap gap-2">
                 {note.tags.slice(0, 3).map((tag) => (
-                  <span key={tag} className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground">
-                    #{tag}
-                  </span>
+                  <TagChip key={tag} tag={tag} className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground" />
                 ))}
               </div>
             ) : null}

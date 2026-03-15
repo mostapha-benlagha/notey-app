@@ -24,12 +24,14 @@ export function useNoteEditor() {
   const location = useLocation();
   const draftState = (location.state as DraftState | null) ?? null;
   const addNote = useNotesStore((state) => state.addNote);
+  const notes = useNotesStore((state) => state.notes);
   const updateNote = useNotesStore((state) => state.updateNote);
   const getNoteById = useNotesStore((state) => state.getNoteById);
   const markNoteSeen = useNotificationsStore((state) => state.markNoteSeen);
   const projects = useProjectsStore((state) => state.projects);
   const tasks = useTasksStore((state) => state.tasks);
   const statuses = useTasksStore((state) => state.statuses);
+  const updateTaskDetails = useTasksStore((state) => state.updateTaskDetails);
   const includeLinkedTodosInExports = useSettingsStore((state) => state.includeLinkedTodosInExports);
   const existingNote = id ? getNoteById(id) : undefined;
   const isNew = !id;
@@ -52,6 +54,8 @@ export function useNoteEditor() {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState(false);
+  const [isLinkedTasksOpen, setIsLinkedTasksOpen] = useState(false);
+  const [selectedLinkedTaskId, setSelectedLinkedTaskId] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -73,6 +77,10 @@ export function useNoteEditor() {
     }
     return tasks.filter((task) => !task.deletedAt && (task.noteId === id || task.evidenceNoteIds.includes(id)));
   }, [id, isNew, tasks]);
+  const selectedLinkedTask = useMemo(
+    () => linkedTasks.find((task) => task.id === selectedLinkedTaskId) ?? null,
+    [linkedTasks, selectedLinkedTaskId],
+  );
   const taskStatusLabels = useMemo(() => Object.fromEntries(statuses.map((status) => [status.id, status.label])), [statuses]);
   const exportNoteMeta = useMemo(() => {
     const createdAt = existingNote ? new Date(existingNote.createdAt) : new Date();
@@ -187,20 +195,28 @@ export function useNoteEditor() {
     initialHtml,
     isExportMenuOpen,
     isExportingPdf,
+    isLinkedTasksOpen,
     isNew,
     isPdfPreviewOpen,
     isSaving,
     linkedTasks,
     navigate,
+    notes,
     pdfExportRef,
     pdfPreviewRef,
+    projects,
     projectId,
     returnTo,
+    selectedLinkedTask,
     setContent,
     setIsExportMenuOpen,
     setIsExportingPdf,
+    setIsLinkedTasksOpen,
     setIsPdfPreviewOpen,
     setProjectId,
+    setSelectedLinkedTaskId,
     taskStatusLabels,
+    statuses,
+    updateTaskDetails,
   };
 }

@@ -1,11 +1,11 @@
-import { ArrowLeft, Download, Save } from "lucide-react";
+import { ArrowLeft, Download, Link2, Save } from "lucide-react";
 import { useNoteEditorContext } from "@/features/note-editor/NoteEditorContext";
 import { downloadTextNote } from "@/features/note-editor/export-utils";
 import { Button } from "@/components/ui/button";
 import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function NoteEditorHeader() {
-  const { exportText, isExportMenuOpen, isExportingPdf, isNew, isSaving, navigate, returnTo, setIsExportMenuOpen, setIsExportingPdf, setIsPdfPreviewOpen, handleSave, exportMenuRef } =
+  const { exportText, isExportMenuOpen, isExportingPdf, isLinkedTasksOpen, isNew, isSaving, linkedTasks, navigate, returnTo, setIsExportMenuOpen, setIsExportingPdf, setIsLinkedTasksOpen, setIsPdfPreviewOpen, handleSave, exportMenuRef } =
     useNoteEditorContext();
 
   return (
@@ -19,6 +19,21 @@ export function NoteEditorHeader() {
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
+        {!isNew ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="rounded-2xl"
+            aria-label="Open linked tasks"
+            title="Open linked tasks"
+            onClick={() => setIsLinkedTasksOpen(true)}
+            data-active={isLinkedTasksOpen ? "true" : "false"}
+          >
+            <Link2 className="h-4 w-4" />
+            <span className="sr-only">Linked tasks ({linkedTasks.length})</span>
+          </Button>
+        ) : null}
         <div className="relative" ref={exportMenuRef}>
           <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setIsExportMenuOpen((current) => !current)} disabled={!exportText}>
             <Download className="h-4 w-4" />

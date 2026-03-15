@@ -1,5 +1,5 @@
-import { Badge } from "@/components/ui/badge";
+import { TagChip } from "@/components/ui/tag-chip";
 
 export function TagBadge({ tag }: { tag: string }) {
-  return <Badge variant="accent">#{tag}</Badge>;
+  return <TagChip tag={tag} variant="accent" />;
 }
