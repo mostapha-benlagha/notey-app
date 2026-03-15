@@ -1,5 +1,5 @@
 import "@xyflow/react/dist/style.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Settings2 } from "lucide-react";
 import {
   addEdge,
@@ -66,6 +66,9 @@ function isWithinDateRange(createdAt: string, dateFrom: string, dateTo: string) 
 }
 
 type TimelinePreset = "today" | "week" | "month" | "custom";
+type StoredNodePositions = Record<string, { x: number; y: number }>;
+
+const FLOW_NODE_POSITIONS_STORAGE_KEY = "notey-flow-node-positions";
 
 function toDateInputValue(value: Date) {
   return value.toISOString().slice(0, 10);
@@ -92,6 +95,53 @@ function getTimelineRange(preset: TimelinePreset, customFrom: string, customTo: 
   }
 
   return { dateFrom: customFrom, dateTo: customTo };
+}
+
+function readStoredNodePositions(): StoredNodePositions {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  try {
+    const raw = window.localStorage.getItem(FLOW_NODE_POSITIONS_STORAGE_KEY);
+    if (!raw) {
+      return {};
+    }
+
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object") {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(parsed).filter((entry): entry is [string, { x: number; y: number }] => {
+        const [, value] = entry;
+        return !!value && typeof value === "object" && typeof value.x === "number" && typeof value.y === "number";
+      }),
+    );
+  } catch {
+    return {};
+  }
+}
+
+function writeStoredNodePositions(positions: StoredNodePositions) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(FLOW_NODE_POSITIONS_STORAGE_KEY, JSON.stringify(positions));
+}
+
+function applyStoredPositions(nodes: Node[], storedPositions: StoredNodePositions) {
+  return nodes.map((node) => {
+    const savedPosition = storedPositions[node.id];
+    return savedPosition
+      ? {
+          ...node,
+          position: savedPosition,
+        }
+      : node;
+  });
 }
 
 function createProjectNodes(projects: Project[]) {
@@ -319,6 +369,7 @@ export function FlowPage() {
   const [projectFilter, setProjectFilter] = useState<string[] | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[] | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const storedPositionsRef = useRef<StoredNodePositions>(readStoredNodePositions());
 
   const allProjectIds = useMemo(() => projects.map((project) => project.id), [projects]);
   const allStatusIds = useMemo(() => statuses.map((status) => status.id), [statuses]);
@@ -385,7 +436,7 @@ export function FlowPage() {
     [filteredNotes, filteredTasks, showTodos],
   );
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(graphNodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState(applyStoredPositions(graphNodes, storedPositionsRef.current));
   const [edges, setEdges, onEdgesChange] = useEdgesState(graphEdges);
 
   const activeFilterCount =
@@ -404,12 +455,32 @@ export function FlowPage() {
           : `${activeDateRange.dateFrom || "Any start"} -> ${activeDateRange.dateTo || "Any end"}`;
 
   useEffect(() => {
-    setNodes(graphNodes);
+    setNodes((currentNodes) => {
+      const currentPositions = Object.fromEntries(
+        currentNodes.map((node) => [node.id, node.position]),
+      );
+      const mergedPositions = {
+        ...storedPositionsRef.current,
+        ...currentPositions,
+      };
+
+      return applyStoredPositions(graphNodes, mergedPositions);
+    });
   }, [graphNodes, setNodes]);
 
   useEffect(() => {
     setEdges(graphEdges);
   }, [graphEdges, setEdges]);
+
+  useEffect(() => {
+    const nextStoredPositions = {
+      ...storedPositionsRef.current,
+      ...Object.fromEntries(nodes.map((node) => [node.id, node.position])),
+    };
+
+    storedPositionsRef.current = nextStoredPositions;
+    writeStoredNodePositions(nextStoredPositions);
+  }, [nodes]);
 
   const isLoading = notesLoading || tasksLoading;
 
