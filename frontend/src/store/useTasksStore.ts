@@ -43,6 +43,7 @@ interface TasksState {
     tags: string[];
   }) => Promise<void>;
   setTaskNoteLink: (taskId: string, noteId: string | null) => Promise<void>;
+  updateTaskTags: (taskId: string, tags: string[]) => Promise<void>;
   syncTasksProjectForNote: (noteId: string, projectId: string) => Promise<void>;
   clearProjectFromTasks: (projectId: string) => Promise<void>;
   toggleTask: (taskId: string) => Promise<void>;
@@ -188,6 +189,12 @@ export const useTasksStore = create<TasksState>((set, get) => ({
   },
   setTaskNoteLink: async (taskId, noteId) => {
     const updated = await updateTaskRequest({ id: taskId, noteId });
+    set((state) => ({
+      tasks: state.tasks.map((task) => (task.id === taskId ? updated : task)),
+    }));
+  },
+  updateTaskTags: async (taskId, tags) => {
+    const updated = await updateTaskRequest({ id: taskId, tags });
     set((state) => ({
       tasks: state.tasks.map((task) => (task.id === taskId ? updated : task)),
     }));

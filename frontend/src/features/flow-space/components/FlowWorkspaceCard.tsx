@@ -1,4 +1,4 @@
-import { Settings2 } from "lucide-react";
+import { PlusCircle, Settings2 } from "lucide-react";
 import { Background, Controls, ReactFlow } from "@xyflow/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { useFlowSpaceContext } from "@/features/flow-space/FlowSpaceContext";
 export function FlowWorkspaceCard() {
   const {
     activeFilterCount,
+    filteredTags,
     dateRangeLabel,
     edges,
     filteredNotes,
@@ -19,6 +20,8 @@ export function FlowWorkspaceCard() {
     onEdgesChange,
     onNodesChange,
     setFiltersOpen,
+    setCreatePanelOpen,
+    showTags,
     showTodos,
   } = useFlowSpaceContext();
 
@@ -43,6 +46,13 @@ export function FlowWorkspaceCard() {
             <div className="inline-flex rounded-full bg-sky-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
               {showTodos ? filteredTasks.length : 0} to-dos
             </div>
+            <div className="inline-flex rounded-full bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+              {showTags ? filteredTags.length : 0} tags
+            </div>
+            <Button type="button" className="rounded-2xl" onClick={() => setCreatePanelOpen(true)}>
+              <PlusCircle className="h-4 w-4" />
+              Add item
+            </Button>
             <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setFiltersOpen(true)}>
               <Settings2 className="h-4 w-4" />
               Filters {activeFilterCount ? `(${activeFilterCount})` : ""}
@@ -68,11 +78,19 @@ export function FlowWorkspaceCard() {
             <div className="absolute right-5 top-5 z-10 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-xs leading-6 text-muted-foreground shadow-soft backdrop-blur">
               Drag nodes to organize them.
               <br />
+              Use Add item to create projects, tags, or to-dos here.
+              <br />
               Connect a note to a project to change its project.
               <br />
               Connect a to-do to a note to link it.
+              {showTags ? (
+                <>
+                  <br />
+                  Connect notes or to-dos to tags to attach them.
+                </>
+              ) : null}
               <br />
-              Select a task edge and press Delete to unlink it.
+              Select a link and press Delete to unlink it.
             </div>
           ) : null}
           <ReactFlow

@@ -22,9 +22,11 @@ export function FlowFiltersDialog() {
     setDateTo,
     setFiltersOpen,
     setProjectFilter,
+    setShowTags,
     setShowTodos,
     setStatusFilter,
     setTimelinePreset,
+    showTags,
     showTodos,
     statuses,
     timelinePreset,
@@ -103,6 +105,16 @@ export function FlowFiltersDialog() {
                   </p>
                 </div>
                 <Switch checked={showTodos} onCheckedChange={setShowTodos} />
+              </div>
+
+              <div className="flex items-center justify-between gap-4 rounded-[20px] border border-border bg-secondary/25 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Show tags</p>
+                  <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                    Add the tag layer to the workspace so you can map note and task themes visually.
+                  </p>
+                </div>
+                <Switch checked={showTags} onCheckedChange={setShowTags} />
               </div>
 
               <div className="flex items-center justify-between gap-3">

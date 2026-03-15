@@ -30,6 +30,7 @@ interface NotesState {
   addNote: (input: AddNoteInput) => Promise<Note>;
   updateNote: (input: UpdateNoteInput) => Promise<Note | null>;
   setNoteProjectLink: (noteId: string, projectId: string) => Promise<Note | null>;
+  updateNoteTags: (noteId: string, tags: string[]) => Promise<Note | null>;
   clearProjectFromNotes: (projectId: string) => Promise<void>;
   deleteNote: (noteId: string) => Promise<void>;
   applyServerNote: (note: Note) => void;
@@ -126,6 +127,27 @@ export const useNotesStore = create<NotesState>((set, get) => ({
       richContent: existing.richContent,
       projectId,
       tags: existing.tags,
+      attachments: existing.attachments,
+    });
+
+    set((state) => ({
+      notes: state.notes.map((note) => (note.id === noteId ? updated : note)),
+    }));
+
+    return updated;
+  },
+  updateNoteTags: async (noteId, tags) => {
+    const existing = get().notes.find((note) => note.id === noteId);
+    if (!existing) {
+      return null;
+    }
+
+    const updated = await updateNoteRequest({
+      id: existing.id,
+      content: existing.content,
+      richContent: existing.richContent,
+      projectId: existing.projectId,
+      tags,
       attachments: existing.attachments,
     });
 
