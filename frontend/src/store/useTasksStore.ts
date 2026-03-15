@@ -44,6 +44,7 @@ interface TasksState {
   }) => Promise<void>;
   setTaskNoteLink: (taskId: string, noteId: string | null) => Promise<void>;
   syncTasksProjectForNote: (noteId: string, projectId: string) => Promise<void>;
+  clearProjectFromTasks: (projectId: string) => Promise<void>;
   toggleTask: (taskId: string) => Promise<void>;
   trashTask: (taskId: string) => Promise<void>;
   restoreTask: (taskId: string) => Promise<void>;
@@ -202,6 +203,26 @@ export const useTasksStore = create<TasksState>((set, get) => ({
         updateTaskRequest({
           id: task.id,
           projectId,
+        }),
+      ),
+    );
+
+    const updatedById = new Map(updatedTasks.map((task) => [task.id, task]));
+    set((state) => ({
+      tasks: state.tasks.map((task) => updatedById.get(task.id) ?? task),
+    }));
+  },
+  clearProjectFromTasks: async (projectId) => {
+    const linkedTasks = get().tasks.filter((task) => task.projectId === projectId);
+    if (!linkedTasks.length) {
+      return;
+    }
+
+    const updatedTasks = await Promise.all(
+      linkedTasks.map((task) =>
+        updateTaskRequest({
+          id: task.id,
+          projectId: "",
         }),
       ),
     );

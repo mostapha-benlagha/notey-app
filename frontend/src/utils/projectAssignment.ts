@@ -52,8 +52,8 @@ function extractTopicLabel(content: string) {
     .trim();
 
   const source = cleaned || candidate;
-  const words = source.split(/\s+/).filter(Boolean).slice(0, 4);
-  if (!words.length) {
+  const words = source.split(/\s+/).filter(Boolean);
+  if (!words.length || words.length > 2) {
     return null;
   }
 

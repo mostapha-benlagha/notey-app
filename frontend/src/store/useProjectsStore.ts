@@ -8,6 +8,7 @@ interface ProjectsState {
   projects: Project[];
   selectedProjectId: string | null;
   createProject: (project: Project) => void;
+  deleteProject: (projectId: string) => void;
   selectProject: (projectId: string | null) => void;
 }
 
@@ -64,6 +65,15 @@ export const useProjectsStore = create<ProjectsState>((set) => ({
       writeStoredProjects(projects);
       return {
         projects,
+      };
+    }),
+  deleteProject: (projectId) =>
+    set((state) => {
+      const projects = state.projects.filter((project) => project.id !== projectId);
+      writeStoredProjects(projects);
+      return {
+        projects,
+        selectedProjectId: state.selectedProjectId === projectId ? null : state.selectedProjectId,
       };
     }),
   selectProject: (projectId) =>

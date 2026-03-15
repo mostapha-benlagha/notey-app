@@ -30,10 +30,14 @@ export function ProjectPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const notes = useNotesStore((state) => state.notes);
+  const clearProjectFromNotes = useNotesStore((state) => state.clearProjectFromNotes);
   const deleteNote = useNotesStore((state) => state.deleteNote);
   const projects = useProjectsStore((state) => state.projects);
+  const deleteProject = useProjectsStore((state) => state.deleteProject);
+  const selectProject = useProjectsStore((state) => state.selectProject);
   const statuses = useTasksStore((state) => state.statuses);
   const tasks = useTasksStore((state) => state.tasks);
+  const clearProjectFromTasks = useTasksStore((state) => state.clearProjectFromTasks);
   const restoreTask = useTasksStore((state) => state.restoreTask);
   const permanentlyDeleteTask = useTasksStore((state) => state.permanentlyDeleteTask);
 
@@ -42,6 +46,7 @@ export function ProjectPage() {
   const [selectedProjectFilter, setSelectedProjectFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [confirmDeleteNoteId, setConfirmDeleteNoteId] = useState<string | null>(null);
+  const [confirmDeleteProject, setConfirmDeleteProject] = useState(false);
 
   const isAllProjectsView = id === "all";
   const syntheticAllProject = {
@@ -148,6 +153,12 @@ export function ProjectPage() {
                 Back to chat
               </Link>
             </Button>
+            {!isAllProjectsView ? (
+              <Button variant="ghost" className="rounded-2xl text-rose-600 hover:text-rose-700" onClick={() => setConfirmDeleteProject(true)}>
+                <Trash2 className="h-4 w-4" />
+                Delete project
+              </Button>
+            ) : null}
             <Button className="rounded-2xl" onClick={openNewProjectNote}>
               <FilePenLine className="h-4 w-4" />
               {isAllProjectsView ? "Create note" : `Create note for ${project.name}`}
@@ -301,6 +312,40 @@ export function ProjectPage() {
           )}
         </div>
       </div>
+
+      <AlertDialog
+        open={confirmDeleteProject}
+        onOpenChange={(open) => {
+          setConfirmDeleteProject(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The project will be removed from your workspace. Notes and tasks currently inside it will stay in the app, but they will become unassigned.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              tone="destructive"
+              onClick={async () => {
+                if (!isAllProjectsView && project?.id) {
+                  await clearProjectFromNotes(project.id);
+                  await clearProjectFromTasks(project.id);
+                  deleteProject(project.id);
+                  selectProject(null);
+                  navigate("/app/projects/all", { replace: true });
+                }
+                setConfirmDeleteProject(false);
+              }}
+            >
+              Delete project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={!!confirmDeleteNoteId}

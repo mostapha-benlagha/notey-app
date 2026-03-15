@@ -1,4 +1,6 @@
+import * as React from "react";
 import {
+  ChevronRight,
   LogOut,
   Maximize2,
   Minimize2,
@@ -13,6 +15,7 @@ import { ProjectList } from "@/components/projects/ProjectList";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { useProjects } from "@/hooks/useProjects";
 import { cn } from "@/lib/utils";
@@ -36,6 +39,9 @@ export function Sidebar() {
   const setBooleanSetting = useSettingsStore(
     (state) => state.setBooleanSetting,
   );
+  const [isProjectsDialogOpen, setIsProjectsDialogOpen] = React.useState(false);
+  const visibleProjects = projects.slice(0, 5);
+  const hasHiddenProjects = projects.length > visibleProjects.length;
 
   return (
     <Card className="surface-grid flex h-full flex-col rounded-[32px] p-5">
@@ -103,10 +109,21 @@ export function Sidebar() {
           </p>
         </div>
         <ProjectList
-          projects={projects}
+          projects={visibleProjects}
           selectedProjectId={selectedProjectId}
           onSelect={selectProject}
         />
+        {hasHiddenProjects ? (
+          <Button
+            type="button"
+            variant="ghost"
+            className="mt-2 w-full justify-between rounded-2xl"
+            onClick={() => setIsProjectsDialogOpen(true)}
+          >
+            See more
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        ) : null}
       </div>
       {user ? (
         <>
@@ -151,6 +168,26 @@ export function Sidebar() {
           </div>
         </>
       ) : null}
+      <Dialog open={isProjectsDialogOpen} onOpenChange={setIsProjectsDialogOpen}>
+        <DialogContent className="left-auto right-0 top-0 h-screen max-w-md translate-x-0 translate-y-0 rounded-none rounded-l-[32px] border-l border-white/80 p-0">
+          <div className="flex h-full flex-col">
+            <DialogHeader className="border-b border-border/70 px-6 py-5">
+              <DialogDescription>All projects</DialogDescription>
+              <DialogTitle>Browse every project</DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto px-5 py-5">
+              <ProjectList
+                projects={projects}
+                selectedProjectId={selectedProjectId}
+                onSelect={(projectId) => {
+                  selectProject(projectId);
+                  setIsProjectsDialogOpen(false);
+                }}
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

@@ -142,10 +142,12 @@ function sanitizeResult(input: {
   fallbackProjectId: string;
   prompt: string;
 }): OpenAiNoteAnalysisResult {
-  const suggestedProjectId =
+  const sanitizedProjectId =
     typeof input.raw.projectId === 'string'
       ? input.raw.projectId.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80)
       : input.fallbackProjectId;
+  const suggestedProjectId =
+    sanitizedProjectId.split('-').filter(Boolean).length <= 2 ? sanitizedProjectId : '';
 
   const tags = Array.isArray(input.raw.tags)
     ? uniqueStrings(input.raw.tags.filter((value): value is string => typeof value === 'string')).slice(0, 5)

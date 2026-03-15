@@ -30,6 +30,7 @@ interface NotesState {
   addNote: (input: AddNoteInput) => Promise<Note>;
   updateNote: (input: UpdateNoteInput) => Promise<Note | null>;
   setNoteProjectLink: (noteId: string, projectId: string) => Promise<Note | null>;
+  clearProjectFromNotes: (projectId: string) => Promise<void>;
   deleteNote: (noteId: string) => Promise<void>;
   applyServerNote: (note: Note) => void;
   getNoteById: (noteId: string) => Note | undefined;
@@ -133,6 +134,30 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     }));
 
     return updated;
+  },
+  clearProjectFromNotes: async (projectId) => {
+    const linkedNotes = get().notes.filter((note) => note.projectId === projectId);
+    if (!linkedNotes.length) {
+      return;
+    }
+
+    const updatedNotes = await Promise.all(
+      linkedNotes.map((note) =>
+        updateNoteRequest({
+          id: note.id,
+          content: note.content,
+          richContent: note.richContent,
+          projectId: "",
+          tags: note.tags,
+          attachments: note.attachments,
+        }),
+      ),
+    );
+
+    const updatedById = new Map(updatedNotes.map((note) => [note.id, note]));
+    set((state) => ({
+      notes: state.notes.map((note) => updatedById.get(note.id) ?? note),
+    }));
   },
   deleteNote: async (noteId) => {
     await deleteNoteRequest(noteId);
