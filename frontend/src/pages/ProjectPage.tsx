@@ -277,22 +277,6 @@ export function ProjectPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-[32px]">
-            <CardHeader>
-              <CardDescription>Project tasks</CardDescription>
-              <CardTitle className="text-2xl">
-                {isAllProjectsView ? "Tasks still live in the board" : "Task pipeline lives in the board"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-[28px] border border-dashed border-border bg-white/45 px-6 py-8 text-sm leading-7 text-muted-foreground">
-                {isAllProjectsView
-                  ? "Tasks across every project still live in the main task board. Use it to move work across statuses, create custom columns, and manage trash."
-                  : `Tasks for ${project.name} now live in the kanban board. Use the board to move tasks across statuses, create custom columns, and manage trash.`}
-              </div>
-            </CardContent>
-          </Card>
-
           {!!trashedProjectTasks.length && (
             <TaskTrashPanel
               tasks={trashedProjectTasks}
