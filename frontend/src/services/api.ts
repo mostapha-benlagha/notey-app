@@ -45,6 +45,14 @@ interface AuthResponse {
   user: User;
 }
 
+interface TwoFactorChallengeResponse {
+  ok: true;
+  twoFactorRequired: true;
+  challengeId: string;
+  method: "email" | "authenticator";
+  email?: string;
+}
+
 interface SignupResponse {
   ok: true;
   email: string;
@@ -64,6 +72,15 @@ interface ProfileResponse {
 interface SettingsResponse {
   ok: true;
   settings: Settings;
+}
+
+interface AuthenticatorSetupResponse {
+  ok: true;
+  setup: {
+    manualEntryKey: string;
+    otpAuthUrl: string;
+    settings: Settings;
+  };
 }
 
 interface OnboardingResponse {
@@ -113,7 +130,17 @@ export async function signup(input: {
 }
 
 export async function login(input: { email: string; password: string }) {
-  const { data } = await apiClient.post<AuthResponse>("/auth/login", input);
+  const { data } = await apiClient.post<AuthResponse | TwoFactorChallengeResponse>("/auth/login", input);
+  return data;
+}
+
+export async function verifyTwoFactor(input: { challengeId: string; code: string }) {
+  const { data } = await apiClient.post<AuthResponse>("/auth/2fa/verify", input);
+  return data;
+}
+
+export async function resendTwoFactor(challengeId: string) {
+  const { data } = await apiClient.post<TwoFactorChallengeResponse>("/auth/2fa/resend", { challengeId });
   return data;
 }
 
@@ -157,6 +184,16 @@ export async function fetchSettings() {
 
 export async function updateSettings(input: Partial<Settings>) {
   const { data } = await apiClient.patch<SettingsResponse>("/settings", input);
+  return data;
+}
+
+export async function createAuthenticatorSetup() {
+  const { data } = await apiClient.post<AuthenticatorSetupResponse>("/settings/two-factor/authenticator/setup");
+  return data;
+}
+
+export async function verifyAuthenticatorSetup(code: string) {
+  const { data } = await apiClient.post<SettingsResponse>("/settings/two-factor/authenticator/verify", { code });
   return data;
 }
 

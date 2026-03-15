@@ -82,11 +82,15 @@ function createTray() {
 }
 
 function getAppIconPath() {
+  const icoPath = path.join(__dirname, "..", "frontend", "public", "icons", "notey-app-icon.ico");
+  if (fs.existsSync(icoPath)) {
+    return icoPath;
+  }
   const pngPath = path.join(__dirname, "assets", "tray-icon.png");
   if (fs.existsSync(pngPath)) {
     return pngPath;
   }
-  return path.join(__dirname, "..", "frontend", "public", "icons", "notey-app-icon.svg");
+  return path.join(__dirname, "..", "frontend", "public", "icons", "notey-app-icon.png");
 }
 
 function createMainWindow() {

@@ -2,9 +2,24 @@ import crypto from 'node:crypto';
 import type { Request, Response } from 'express';
 import { env } from '../../config/env.js';
 import { logger } from '../../config/logger.js';
+import { SettingsModel } from '../../models/settings.model.js';
 import { UserModel } from '../../models/user.model.js';
-import { loginSchema, resendVerificationSchema, signupSchema, verifyEmailSchema } from '../../schemas/auth.schema.js';
-import { sendEmailVerificationEmail } from '../../services/mail.service.js';
+import {
+  loginSchema,
+  resendTwoFactorSchema,
+  resendVerificationSchema,
+  signupSchema,
+  verifyEmailSchema,
+  verifyTwoFactorSchema,
+} from '../../schemas/auth.schema.js';
+import { sendEmailVerificationEmail, sendTwoFactorCodeEmail } from '../../services/mail.service.js';
+import {
+  createTwoFactorChallenge,
+  generateEmailTwoFactorCode,
+  hashTwoFactorValue,
+  twoFactorChallengeLifetimeMinutes,
+  verifyAuthenticatorCode,
+} from '../../services/two-factor.service.js';
 import { ensureUserSettings } from '../../services/user-settings.service.js';
 import { hashPassword, verifyPassword } from '../../utils/password.js';
 import { signAccessToken } from '../../utils/token.js';
@@ -53,6 +68,20 @@ function getVerificationUrl(token: string) {
   return `${env.CLIENT_URL}/verify-email?token=${encodeURIComponent(token)}`;
 }
 
+async function clearTwoFactorChallenge(userId: unknown) {
+  await UserModel.updateOne(
+    { _id: userId },
+    {
+      $unset: {
+        twoFactorChallengeIdHash: 1,
+        twoFactorChallengeCodeHash: 1,
+        twoFactorChallengeMethod: 1,
+        twoFactorChallengeExpiresAt: 1,
+      },
+    }
+  );
+}
+
 async function issueVerificationForUser(user: { _id: unknown; email: string; firstName: string }) {
   const verification = createVerificationToken();
   await UserModel.updateOne(
@@ -85,6 +114,71 @@ async function issueVerificationForUser(user: { _id: unknown; email: string; fir
   return {
     verificationUrl,
     expiresAt: verification.expiresAt,
+  };
+}
+
+async function issueEmailTwoFactorChallenge(user: {
+  _id: unknown;
+  email: string;
+  firstName: string;
+  id: string;
+}) {
+  const challenge = createTwoFactorChallenge('email');
+  const code = generateEmailTwoFactorCode();
+
+  await UserModel.updateOne(
+    { _id: user._id },
+    {
+      $set: {
+        twoFactorChallengeIdHash: hashTwoFactorValue(challenge.challengeId),
+        twoFactorChallengeCodeHash: hashTwoFactorValue(code),
+        twoFactorChallengeMethod: 'email',
+        twoFactorChallengeExpiresAt: challenge.expiresAt,
+      },
+    }
+  );
+
+  const emailSent = await sendTwoFactorCodeEmail({
+    to: user.email,
+    firstName: user.firstName,
+    code,
+    expiresInMinutes: twoFactorChallengeLifetimeMinutes,
+  });
+
+  logger.info(
+    {
+      userId: user.id,
+      email: user.email,
+      emailSent,
+      challengeExpiresAt: challenge.expiresAt.toISOString(),
+    },
+    'Two-factor email challenge created'
+  );
+
+  return {
+    ok: true as const,
+    twoFactorRequired: true as const,
+    challengeId: challenge.challengeId,
+    method: 'email' as const,
+    email: user.email,
+  };
+}
+
+function buildTwoFactorSuccessResponse(user: {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  plan: string;
+  emailVerified: boolean;
+  onboardingCompleted: boolean;
+  createdAt?: Date;
+}) {
+  return {
+    ok: true as const,
+    token: signAccessToken({ sub: user.id }),
+    user: serializeUser(user),
   };
 }
 
@@ -126,13 +220,56 @@ export async function login(request: Request, response: Response) {
     throw createHttpError('Verify your email before logging in.', 403, 'EMAIL_NOT_VERIFIED');
   }
 
-  await ensureUserSettings(user._id);
+  const settings = await ensureUserSettings(user._id);
 
-  response.json({
-    ok: true,
-    token: signAccessToken({ sub: user.id }),
-    user: serializeUser(user),
-  });
+  if (settings.twoFactorEnabled) {
+    const method = settings.twoFactorMethod ?? 'email';
+
+    if (method === 'authenticator') {
+      if (!settings.authenticatorSecret) {
+        throw createHttpError(
+          'Authenticator-based two-factor authentication is not fully configured. Switch to email 2FA or complete setup in settings.',
+          409,
+          'AUTHENTICATOR_NOT_CONFIGURED'
+        );
+      }
+
+      const challenge = createTwoFactorChallenge('authenticator');
+      await UserModel.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            twoFactorChallengeIdHash: hashTwoFactorValue(challenge.challengeId),
+            twoFactorChallengeMethod: 'authenticator',
+            twoFactorChallengeExpiresAt: challenge.expiresAt,
+          },
+          $unset: {
+            twoFactorChallengeCodeHash: 1,
+          },
+        }
+      );
+
+      response.json({
+        ok: true,
+        twoFactorRequired: true,
+        challengeId: challenge.challengeId,
+        method: 'authenticator',
+      });
+      return;
+    }
+
+    response.json(
+      await issueEmailTwoFactorChallenge({
+        _id: user._id,
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+      })
+    );
+    return;
+  }
+
+  response.json(buildTwoFactorSuccessResponse(user));
 }
 
 export async function verifyEmail(request: Request, response: Response) {
@@ -154,9 +291,7 @@ export async function verifyEmail(request: Request, response: Response) {
   await ensureUserSettings(user._id);
 
   response.json({
-    ok: true,
-    token: signAccessToken({ sub: user.id }),
-    user: serializeUser(user),
+    ...buildTwoFactorSuccessResponse(user),
   });
 }
 
@@ -179,6 +314,65 @@ export async function resendVerification(request: Request, response: Response) {
     email: user.email,
     verificationRequired: true,
   });
+}
+
+export async function verifyTwoFactor(request: Request, response: Response) {
+  const payload = verifyTwoFactorSchema.parse(request.body);
+  const challengeIdHash = hashTwoFactorValue(payload.challengeId);
+  const user = await UserModel.findOne({
+    twoFactorChallengeIdHash: challengeIdHash,
+    twoFactorChallengeExpiresAt: { $gt: new Date() },
+  });
+
+  if (!user || !user.twoFactorChallengeMethod) {
+    throw createHttpError('This login challenge is invalid or has expired.', 400, 'INVALID_2FA_CHALLENGE');
+  }
+
+  const settings = await SettingsModel.findOne({ userId: user._id }).lean();
+  if (!settings?.twoFactorEnabled) {
+    await clearTwoFactorChallenge(user._id);
+    throw createHttpError('Two-factor authentication is no longer required for this account.', 409, '2FA_NOT_ENABLED');
+  }
+
+  const normalizedCode = payload.code.replace(/\s+/g, '');
+  const method = user.twoFactorChallengeMethod;
+
+  if (method === 'email') {
+    if (!user.twoFactorChallengeCodeHash || hashTwoFactorValue(normalizedCode) !== user.twoFactorChallengeCodeHash) {
+      throw createHttpError('That email code is incorrect.', 401, 'INVALID_2FA_CODE');
+    }
+  } else {
+    if (!settings.authenticatorSecret || !verifyAuthenticatorCode(settings.authenticatorSecret, normalizedCode)) {
+      throw createHttpError('That authenticator code is incorrect.', 401, 'INVALID_2FA_CODE');
+    }
+  }
+
+  await clearTwoFactorChallenge(user._id);
+
+  response.json(buildTwoFactorSuccessResponse(user));
+}
+
+export async function resendTwoFactor(request: Request, response: Response) {
+  const payload = resendTwoFactorSchema.parse(request.body);
+  const challengeIdHash = hashTwoFactorValue(payload.challengeId);
+  const user = await UserModel.findOne({
+    twoFactorChallengeIdHash: challengeIdHash,
+    twoFactorChallengeExpiresAt: { $gt: new Date() },
+    twoFactorChallengeMethod: 'email',
+  });
+
+  if (!user) {
+    throw createHttpError('This email challenge is invalid or has expired.', 400, 'INVALID_2FA_CHALLENGE');
+  }
+
+  response.json(
+    await issueEmailTwoFactorChallenge({
+      _id: user._id,
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+    })
+  );
 }
 
 export async function me(request: Request, response: Response) {

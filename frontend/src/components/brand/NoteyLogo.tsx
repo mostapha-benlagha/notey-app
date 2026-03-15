@@ -1,7 +1,7 @@
 import type { ImgHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-const ICON_PATH = "/icons/notey-app-icon.svg";
+const ICON_PATH = "/icons/notey-app-icon.png";
 const LOGO_MARK_PATH = "/icons/notey-logo-without-name.svg";
 const LOGO_FULL_PATH = "/icons/notey-logo-with-name.svg";
 

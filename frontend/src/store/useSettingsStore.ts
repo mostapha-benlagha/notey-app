@@ -1,9 +1,11 @@
 import { create } from "zustand";
 import { fetchSettings, updateSettings } from "@/services/api";
-import type { AppStartPage, DefaultNoteMode, DigestCadence, Settings } from "@/types/settings.types";
+import type { AppStartPage, DefaultNoteMode, DigestCadence, Settings, TwoFactorMethod } from "@/types/settings.types";
 
 const defaultSettings: Settings = {
   twoFactorEnabled: false,
+  twoFactorMethod: "email",
+  authenticatorAppEnabled: false,
   loginAlertsEnabled: true,
   sessionLockEnabled: true,
   aiTaggingEnabled: true,
@@ -34,6 +36,7 @@ interface SettingsState extends Settings {
   initialize: () => Promise<void>;
   clear: () => void;
   setBooleanSetting: (key: BooleanSettingKey, value: boolean) => Promise<void>;
+  setTwoFactorMethod: (value: TwoFactorMethod) => Promise<void>;
   setDigestCadence: (value: DigestCadence) => Promise<void>;
   setDefaultNoteMode: (value: DefaultNoteMode) => Promise<void>;
   setAppStartPage: (value: AppStartPage) => Promise<void>;
@@ -68,8 +71,9 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     try {
       const settings = await persistSettingsPatch({ [key]: value });
       set({ ...settings });
-    } catch {
+    } catch (error) {
       set({ [key]: previous } as Pick<SettingsState, typeof key>);
+      throw error;
     }
   },
   setDigestCadence: async (value) => {
@@ -78,8 +82,20 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     try {
       const settings = await persistSettingsPatch({ digestCadence: value });
       set({ ...settings });
-    } catch {
+    } catch (error) {
       set({ digestCadence: previous });
+      throw error;
+    }
+  },
+  setTwoFactorMethod: async (value) => {
+    const previous = get().twoFactorMethod;
+    set({ twoFactorMethod: value });
+    try {
+      const settings = await persistSettingsPatch({ twoFactorMethod: value });
+      set({ ...settings });
+    } catch (error) {
+      set({ twoFactorMethod: previous });
+      throw error;
     }
   },
   setDefaultNoteMode: async (value) => {
@@ -88,8 +104,9 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     try {
       const settings = await persistSettingsPatch({ defaultNoteMode: value });
       set({ ...settings });
-    } catch {
+    } catch (error) {
       set({ defaultNoteMode: previous });
+      throw error;
     }
   },
   setAppStartPage: async (value) => {
@@ -98,10 +115,11 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     try {
       const settings = await persistSettingsPatch({ appStartPage: value });
       set({ ...settings });
-    } catch {
+    } catch (error) {
       set({ appStartPage: previous });
+      throw error;
     }
   },
 }));
 
-export type { AppStartPage, DefaultNoteMode, DigestCadence };
+export type { AppStartPage, DefaultNoteMode, DigestCadence, TwoFactorMethod };

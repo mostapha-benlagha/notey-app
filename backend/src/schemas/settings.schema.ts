@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const settingsSchema = z.object({
   twoFactorEnabled: z.boolean(),
+  twoFactorMethod: z.enum(['email', 'authenticator']),
   loginAlertsEnabled: z.boolean(),
   sessionLockEnabled: z.boolean(),
   aiTaggingEnabled: z.boolean(),
@@ -16,6 +17,10 @@ export const settingsSchema = z.object({
 });
 
 export const updateSettingsSchema = settingsSchema.partial();
+
+export const verifyAuthenticatorSetupSchema = z.object({
+  code: z.string().trim().min(6).max(8),
+});
 
 export type SettingsInput = z.infer<typeof settingsSchema>;
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;

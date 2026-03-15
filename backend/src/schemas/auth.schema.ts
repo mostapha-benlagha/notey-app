@@ -12,6 +12,15 @@ export const loginSchema = z.object({
   password: z.string().min(8),
 });
 
+export const verifyTwoFactorSchema = z.object({
+  challengeId: z.string().min(1),
+  code: z.string().trim().min(6).max(8),
+});
+
+export const resendTwoFactorSchema = z.object({
+  challengeId: z.string().min(1),
+});
+
 export const verifyEmailSchema = z.object({
   token: z.string().min(1),
 });

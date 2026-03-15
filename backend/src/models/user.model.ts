@@ -45,6 +45,19 @@ const userSchema = new Schema(
     emailVerificationExpiresAt: {
       type: Date,
     },
+    twoFactorChallengeIdHash: {
+      type: String,
+    },
+    twoFactorChallengeCodeHash: {
+      type: String,
+    },
+    twoFactorChallengeMethod: {
+      type: String,
+      enum: ['email', 'authenticator'],
+    },
+    twoFactorChallengeExpiresAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

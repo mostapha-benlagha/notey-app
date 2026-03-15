@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, CheckCircle2, MailCheck, RefreshCw } from "lucide-react";
+import { ArrowRight, RefreshCw } from "lucide-react";
 import axios from "axios";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { NoteyAppIcon } from "@/components/brand/NoteyLogo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -64,8 +65,8 @@ export function VerifyEmailPage() {
   return (
     <Card className="w-full max-w-lg rounded-[36px]">
       <CardHeader>
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          {token ? <CheckCircle2 className="h-6 w-6" /> : <MailCheck className="h-6 w-6" />}
+        <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-primary/10 text-primary">
+          <NoteyAppIcon className="h-9 w-9" alt="Notey app icon" />
         </div>
         <CardDescription className="pt-3">Verify your email</CardDescription>
         <CardTitle className="text-3xl">{token ? "Confirming your email" : "Check your inbox"}</CardTitle>
@@ -73,12 +74,12 @@ export function VerifyEmailPage() {
       <CardContent className="space-y-5">
         {token ? (
           <p className="text-sm text-muted-foreground">
-            We’re validating your verification link and signing you in as soon as it succeeds.
+            We&apos;re validating your verification link and signing you in as soon as it succeeds.
           </p>
         ) : (
           <>
             <p className="text-sm text-muted-foreground">
-              You need to verify your email before accessing Notey. Open the link in your inbox, or resend it here.
+              You need to verify your email before accessing Notey. Look for a branded email with the Notey icon, open the verification button, and you&apos;ll be signed in right away.
             </p>
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="verify-email">

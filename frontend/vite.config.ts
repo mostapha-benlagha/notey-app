@@ -11,7 +11,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["icons/notey-icon.svg", "icons/notey-icon-maskable.svg"],
+      includeAssets: ["icons/notey-app-icon.ico", "icons/notey-app-icon.png"],
       manifest: {
         name: "Notey",
         short_name: "Notey",
@@ -23,14 +23,14 @@ export default defineConfig({
         start_url: "/app",
         icons: [
           {
-            src: "/icons/notey-icon.svg",
-            sizes: "512x512",
-            type: "image/svg+xml",
+            src: "/icons/notey-app-icon.png",
+            sizes: "1024x1024",
+            type: "image/png",
           },
           {
-            src: "/icons/notey-icon-maskable.svg",
-            sizes: "512x512",
-            type: "image/svg+xml",
+            src: "/icons/notey-app-icon.png",
+            sizes: "1024x1024",
+            type: "image/png",
             purpose: "maskable",
           },
         ],

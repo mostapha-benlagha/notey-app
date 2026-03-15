@@ -15,7 +15,7 @@
   "build": {
     "appId": "com.notey.desktop",
     "productName": "Notey",
-    "icon": "../frontend/public/icons/notey-app-icon",
+    "icon": "../frontend/public/icons/notey-app-icon.ico",
     "files": [
       "main.cjs",
       "preload.cjs",

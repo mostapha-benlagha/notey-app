@@ -5,11 +5,13 @@ import {
   fetchMe,
   getStoredToken,
   login,
+  resendTwoFactor,
   resendVerification,
   setStoredToken,
   signup,
   updateProfile,
   verifyEmail,
+  verifyTwoFactor,
 } from "@/services/api";
 import { useNotesStore } from "@/store/useNotesStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -37,13 +39,23 @@ interface SignupResult {
   verificationRequired: true;
 }
 
+interface PendingTwoFactorChallenge {
+  challengeId: string;
+  method: "email" | "authenticator";
+  email?: string;
+}
+
 interface AuthState {
   isAuthenticated: boolean;
   isHydrating: boolean;
   isSubmitting: boolean;
   user: User | null;
+  pendingTwoFactorChallenge: PendingTwoFactorChallenge | null;
   initialize: () => Promise<void>;
   login: (payload: LoginInput) => Promise<void>;
+  verifyTwoFactor: (code: string) => Promise<void>;
+  resendTwoFactor: () => Promise<{ email?: string }>;
+  clearPendingTwoFactor: () => void;
   signup: (payload: SignupInput) => Promise<SignupResult>;
   verifyEmail: (token: string) => Promise<void>;
   resendVerification: (email: string) => Promise<SignupResult>;
@@ -53,50 +65,109 @@ interface AuthState {
   deleteAccount: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>()((set) => ({
+export const useAuthStore = create<AuthState>()((set, get) => ({
   isAuthenticated: false,
   isHydrating: true,
   isSubmitting: false,
   user: null,
+  pendingTwoFactorChallenge: null,
   initialize: async () => {
     const token = getStoredToken();
 
     if (!token) {
       useNotesStore.getState().clear();
       useTasksStore.getState().clear();
-      set({ isAuthenticated: false, user: null, isHydrating: false });
+      set({ isAuthenticated: false, user: null, pendingTwoFactorChallenge: null, isHydrating: false });
       return;
     }
 
     try {
       const { user } = await fetchMe();
-      set({ isAuthenticated: true, user, isHydrating: false });
+      set({ isAuthenticated: true, user, pendingTwoFactorChallenge: null, isHydrating: false });
       await useSettingsStore.getState().initialize();
     } catch {
       setStoredToken(null);
       useNotesStore.getState().clear();
       useTasksStore.getState().clear();
       useSettingsStore.getState().clear();
-      set({ isAuthenticated: false, user: null, isHydrating: false });
+      set({ isAuthenticated: false, user: null, pendingTwoFactorChallenge: null, isHydrating: false });
     }
   },
   login: async (payload) => {
     set({ isSubmitting: true });
     try {
       const response = await login(payload);
+
+      if ("twoFactorRequired" in response) {
+        set({
+          isAuthenticated: false,
+          user: null,
+          pendingTwoFactorChallenge: {
+            challengeId: response.challengeId,
+            method: response.method,
+            email: response.email,
+          },
+          isSubmitting: false,
+        });
+        return;
+      }
+
       setStoredToken(response.token);
-      set({ isAuthenticated: true, user: response.user, isSubmitting: false });
+      set({ isAuthenticated: true, user: response.user, pendingTwoFactorChallenge: null, isSubmitting: false });
       await useSettingsStore.getState().initialize();
     } catch (error) {
       set({ isSubmitting: false });
       throw error;
     }
   },
+  verifyTwoFactor: async (code) => {
+    const challenge = get().pendingTwoFactorChallenge;
+    if (!challenge) {
+      throw new Error("No pending two-factor challenge.");
+    }
+
+    set({ isSubmitting: true });
+    try {
+      const response = await verifyTwoFactor({ challengeId: challenge.challengeId, code });
+      setStoredToken(response.token);
+      set({ isAuthenticated: true, user: response.user, pendingTwoFactorChallenge: null, isSubmitting: false });
+      await useSettingsStore.getState().initialize();
+    } catch (error) {
+      set({ isSubmitting: false });
+      throw error;
+    }
+  },
+  resendTwoFactor: async () => {
+    const challenge = get().pendingTwoFactorChallenge;
+    if (!challenge || challenge.method !== "email") {
+      throw new Error("No email two-factor challenge to resend.");
+    }
+
+    set({ isSubmitting: true });
+    try {
+      const response = await resendTwoFactor(challenge.challengeId);
+      set({
+        pendingTwoFactorChallenge: {
+          challengeId: response.challengeId,
+          method: response.method,
+          email: response.email,
+        },
+        isSubmitting: false,
+      });
+      return { email: response.email };
+    } catch (error) {
+      set({ isSubmitting: false });
+      throw error;
+    }
+  },
+  clearPendingTwoFactor: () => {
+    set({ pendingTwoFactorChallenge: null });
+  },
   signup: async (payload) => {
     set({ isSubmitting: true });
     try {
       const response = await signup(payload);
-      set({ isSubmitting: false, isAuthenticated: false, user: null });
+      set({ isSubmitting: false, isAuthenticated: false, user: null, pendingTwoFactorChallenge: null });
       return response;
     } catch (error) {
       set({ isSubmitting: false });
@@ -108,7 +179,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     try {
       const response = await verifyEmail(token);
       setStoredToken(response.token);
-      set({ isAuthenticated: true, user: response.user, isSubmitting: false });
+      set({ isAuthenticated: true, user: response.user, pendingTwoFactorChallenge: null, isSubmitting: false });
       await useSettingsStore.getState().initialize();
     } catch (error) {
       set({ isSubmitting: false });
@@ -149,7 +220,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     useNotesStore.getState().clear();
     useTasksStore.getState().clear();
     useSettingsStore.getState().clear();
-    set({ isAuthenticated: false, user: null, isHydrating: false, isSubmitting: false });
+    set({ isAuthenticated: false, user: null, pendingTwoFactorChallenge: null, isHydrating: false, isSubmitting: false });
   },
   updateProfile: async (payload) => {
     set({ isSubmitting: true });
@@ -169,7 +240,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
       useNotesStore.getState().clear();
       useTasksStore.getState().clear();
       useSettingsStore.getState().clear();
-      set({ isAuthenticated: false, user: null, isHydrating: false, isSubmitting: false });
+      set({ isAuthenticated: false, user: null, pendingTwoFactorChallenge: null, isHydrating: false, isSubmitting: false });
     } catch (error) {
       set({ isSubmitting: false });
       throw error;
