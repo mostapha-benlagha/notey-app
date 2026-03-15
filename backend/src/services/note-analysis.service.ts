@@ -9,10 +9,15 @@ import { ensureTaskStatus, ensureTaskStatuses } from './task-status.service.js';
 
 type ProjectCandidate = 'work' | 'startup' | 'research' | 'personal';
 
+interface NoteAnalysisTodoItem {
+  title: string;
+  details: string;
+}
+
 interface NoteAnalysisResult {
   suggestedProjectId: string;
   tags: string[];
-  todoTitles: string[];
+  todoItems: NoteAnalysisTodoItem[];
   completedSignals: string[];
   prompt: string;
 }
@@ -115,7 +120,7 @@ function buildNoteAnalysisPrompt(input: {
     `Current note: ${input.noteContent}`,
     `Current project guess: ${input.suggestedProjectId}`,
     `Recent same-project notes: ${input.recentProjectNotes.join(' || ') || 'none'}`,
-    'Return fields: projectId, tags, todoTitles, completedSignals.',
+    'Return fields: projectId, tags, todoItems, completedSignals.',
   ].join('\n');
 }
 
@@ -148,6 +153,13 @@ function extractTodoTitles(content: string) {
       .filter((sentence) => ACTION_PATTERNS.test(sentence) && !COMPLETION_PATTERNS.test(sentence))
       .map((sentence) => titleCase(sentence)),
   ).slice(0, 5);
+}
+
+function buildTodoItems(todoTexts: string[]) {
+  return todoTexts.map((todoText) => ({
+    title: buildAiTaskTitle(todoText),
+    details: buildAiTaskDescription(todoText),
+  }));
 }
 
 function extractCompletionSignals(content: string) {
@@ -187,13 +199,13 @@ async function analyzeNoteHeuristically(input: {
 }) {
   const suggestedProjectId = inferProjectId(input.content, input.fallbackProjectId);
   const tags = inferTags(input.content);
-  const todoTitles = extractTodoTitles(input.content);
+  const todoItems = buildTodoItems(extractTodoTitles(input.content));
   const completedSignals = extractCompletionSignals(input.content);
 
   return {
     suggestedProjectId,
     tags,
-    todoTitles,
+    todoItems,
     completedSignals,
     prompt: buildNoteAnalysisPrompt({
       noteContent: input.content,
@@ -276,7 +288,8 @@ async function processNoteAnalysis(noteId: string, userId: Types.ObjectId) {
       prompt: analysis.prompt,
       suggestedProjectId: analysis.suggestedProjectId,
       tags: analysis.tags,
-      todoTitles: analysis.todoTitles,
+      todoTitles: analysis.todoItems.map((item) => item.title),
+      todoItems: analysis.todoItems,
       completedSignals: analysis.completedSignals,
     },
     'Background note analysis completed'
@@ -302,10 +315,10 @@ async function processNoteAnalysis(noteId: string, userId: Types.ObjectId) {
   }).sort({ createdAt: -1 });
 
   if (settings?.taskExtractionEnabled !== false) {
-    for (const todoTitle of analysis.todoTitles) {
-      const taskTitle = buildAiTaskTitle(todoTitle);
-      const taskDescription = buildAiTaskDescription(todoTitle);
-      const existingTask = projectTasks.find((task) => matchesTodo(`${task.title} ${task.description ?? ''}`.trim(), todoTitle));
+    for (const todoItem of analysis.todoItems) {
+      const taskTitle = compactWhitespace(todoItem.title) || buildAiTaskTitle(todoItem.details);
+      const taskDescription = compactWhitespace(todoItem.details) || buildAiTaskDescription(todoItem.title);
+      const existingTask = projectTasks.find((task) => matchesTodo(`${task.title} ${task.description ?? ''}`.trim(), taskDescription));
       if (existingTask) {
         existingTask.evidenceNoteIds = uniqueStrings([...(existingTask.evidenceNoteIds ?? []), note.id]);
         if (!existingTask.noteId) {
